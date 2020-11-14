@@ -1,3 +1,2 @@
-# Advanced Bot Skeleton
-Template bot I will be using to base new bots off of.
-Adapted from GLR-bot, needs refactoring and probably some more abstractioning to do.
+# Galaxy Life Reborn's Discord bot
+This is our private Discord bot, which will be used for moderation and other purposes in [Our Discord](https://discord.gg/galaxylifereborn)!
