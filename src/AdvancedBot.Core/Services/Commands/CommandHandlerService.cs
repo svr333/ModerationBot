@@ -5,7 +5,6 @@ using AdvancedBot.Core.Extensions;
 using AdvancedBot.Core.Services.DataStorage;
 using System;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using AdvancedBot.Core.Commands;
 
