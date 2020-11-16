@@ -25,7 +25,7 @@ namespace AdvancedBot.Core.Services.DataStorage
         }
 
         private void CreateGuildAccount(ulong id)
-            => SaveGuildAccount(new GuildAccount() { Id = id, Commands = GenerateSettingsForAllCommands(_commands.Commands)} );
+            => SaveGuildAccount(new GuildAccount(id) { Commands = GenerateSettingsForAllCommands(_commands.Commands)} );
 
         private GuildAccount GetGuildAccount(ulong id)
             => _storage.RestoreSingle<GuildAccount>(x => x.Id == id);

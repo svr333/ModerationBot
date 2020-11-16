@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Discord.Commands;
+using Discord.WebSocket;
 
 namespace AdvancedBot.Core.Entities
 {
@@ -9,16 +10,20 @@ namespace AdvancedBot.Core.Entities
     {
         #region Properties
         public ulong Id { get; set; }
-        public List<string> Prefixes { get; set; }
+        public List<string> Prefixes { get; set; } = new List<string>() { "!" };
         public ulong ModRoleId { get; set; }
-        public List<CommandSettings> Commands { get; set; }
+        public List<CommandSettings> Commands { get; set; } = new List<CommandSettings>();
+        public uint LastUsedModerationId { get; set; } = 0;
+        public List<Warning> Warnings { get; set; } = new List<Warning>();
 
         #endregion
 
-        public GuildAccount()
+        public GuildAccount(ulong id)
         {
-            Prefixes = new List<string>() { "!" };
+            Id = id;
         }
+
+        #region Prefixes
 
         public void RemovePrefix(string prefix)
         {
@@ -31,6 +36,10 @@ namespace AdvancedBot.Core.Entities
             if (Prefixes.Contains(prefix)) throw new Exception("Prefix already exists.");
             else Prefixes.Add(prefix);
         }
+
+        #endregion
+
+        #region CommandSettings
 
         public void AddToWhitelist(string name, ulong id, bool isChannel)
         {
@@ -103,5 +112,37 @@ namespace AdvancedBot.Core.Entities
 
         public void SetModRole(ulong id)
             => ModRoleId = id;
+
+        #endregion
+
+        #region Moderation
+        /// <returns>The warning made.</returns>
+        public Warning AddWarningToUser(SocketGuildUser user, SocketGuildUser moderator, string reason)
+        {
+            var warning = new Warning(++LastUsedModerationId, user, moderator, reason);
+            Warnings.Add(warning);
+
+            return warning;
+        }
+
+        /// <returns>The old warning</returns>
+        public Warning RemoveWarningById(uint id)
+        {
+            var warning = Warnings.Find(x => x.Id == id);
+            Warnings.Remove(warning);
+
+            return warning;
+        }
+
+        /// <returns>The old reason</returns>
+        public string ChangeWarningReason(uint id, string newReason)
+        {
+            var warning = Warnings.Find(x => x.Id == id);
+            var oldReason = warning.Reason;
+
+            warning.Reason = newReason;
+            return oldReason;
+        }
+        #endregion
     }
 }
