@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AdvancedBot.Core.Commands;
 
-namespace AdvancedBot.Core.Services._commands
+namespace AdvancedBot.Core.Services.Commands
 {
     public class CommandHandlerService
     {
