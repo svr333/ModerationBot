@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using AdvancedBot.Core.Entities.Enums;
 using Discord.Commands;
-using Discord.WebSocket;
 
 namespace AdvancedBot.Core.Entities
 {
@@ -14,9 +14,11 @@ namespace AdvancedBot.Core.Entities
         public ulong ModRoleId { get; set; }
         public List<CommandSettings> Commands { get; set; } = new List<CommandSettings>();
         public uint LastUsedModerationId { get; set; } = 0;
-        public List<Warning> Warnings { get; set; } = new List<Warning>();
+        public List<Infraction> Infractions { get; set; } = new List<Infraction>();
 
         #endregion
+
+        public GuildAccount() { } // LiteDB
 
         public GuildAccount(ulong id)
         {
@@ -117,30 +119,33 @@ namespace AdvancedBot.Core.Entities
 
         #region Moderation
         /// <returns>The warning made.</returns>
-        public Warning AddWarningToUser(SocketGuildUser user, SocketGuildUser moderator, string reason)
+        public Infraction AddInfractionToGuild(ulong userId, ulong moderatorId, InfractionType type, DateTime? endsAt, string reason)
         {
-            var warning = new Warning(++LastUsedModerationId, user, moderator, reason);
-            Warnings.Add(warning);
+            var infraction = new Infraction(++LastUsedModerationId, userId, moderatorId, type, endsAt, reason);
+            Infractions.Add(infraction);
 
-            return warning;
+            return infraction;
         }
 
         /// <returns>The old warning</returns>
-        public Warning RemoveWarningById(uint id)
+        public Infraction RemoveWarningById(uint id)
         {
-            var warning = Warnings.Find(x => x.Id == id);
-            Warnings.Remove(warning);
+            var infraction = Infractions.Find(x => x.Id == id);
 
-            return warning;
+            if (infraction.Type != InfractionType.Warning)
+                throw new Exception($"Case {id} is not a warning!");
+
+            Infractions.Remove(infraction);
+            return infraction;
         }
 
         /// <returns>The old reason</returns>
-        public string ChangeWarningReason(uint id, string newReason)
+        public string ChangeInfractionReason(uint id, string newReason)
         {
-            var warning = Warnings.Find(x => x.Id == id);
-            var oldReason = warning.Reason;
+            var infraction = Infractions.Find(x => x.Id == id);
+            var oldReason = infraction.Reason;
 
-            warning.Reason = newReason;
+            infraction.Reason = newReason;
             return oldReason;
         }
         #endregion
