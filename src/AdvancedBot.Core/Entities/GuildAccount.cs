@@ -151,6 +151,21 @@ namespace AdvancedBot.Core.Entities
             infraction.Reason = newReason;
             return oldReason;
         }
+        
+        public TimeSpan UpdateInfractionDuration(uint id, TimeSpan newTime)
+        {
+            var infraction = Infractions.Find(x => x.Id == id);
+
+            if (infraction.Type != InfractionType.Ban && infraction.Type != InfractionType.Mute)
+                throw new Exception($"You can only change the duration on a ban or a mute.");
+            else if (infraction.FinishesAt < DateTime.UtcNow)
+                throw new Exception($"You cannot edit a mute/ban that has already finished.");
+
+            var oldTime = (infraction.FinishesAt - DateTime.UtcNow).Value;
+            infraction.FinishesAt = DateTime.UtcNow.Add(newTime);
+            return oldTime;
+        }
+
         #endregion
     }
 }

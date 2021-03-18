@@ -51,9 +51,9 @@ namespace AdvancedBot.Core.Commands.Modules
         [Summary("Change the reason of an existing case.")]
         public async Task ChangeReasonAsync(uint caseId, [Remainder] string newReason)
         {
-            var oldReason = _moderation.ChangeInfractionReasonInGuild(Context.Guild.Id, caseId, newReason);
+            var oldReason = _moderation.ChangeInfractionReason(Context.Guild.Id, caseId, newReason);
 
-            await ReplyAsync($"Successfully updated the reason for case: {caseId}.", false, new EmbedBuilder()
+            await ReplyAsync($"Updated the reason for case: {caseId}.", false, new EmbedBuilder()
             {
                 Title = $"#{caseId} | Reason change",
                 Color = Color.DarkBlue
@@ -65,9 +65,19 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("duration")]
         [Summary("Change the duration of an existing case.")]
-        public async Task ChangeDurationAsync(uint caseId, [Remainder] string newTime)
+        public async Task ChangeDurationAsync(uint caseId, [Remainder] string rawNewTime)
         {
+            var newTime = ParseTimeSpanFromString(ref rawNewTime);
+            var oldTime = _moderation.UpdateDurationOnInfraction(Context.Guild.Id, caseId, newTime);
 
+            await ReplyAsync($"Updated the reason for case: {caseId}.", false, new EmbedBuilder()
+            {
+                Title = $"#{caseId} | Duration change",
+                Color = Color.DarkBlue
+            }
+            .AddField($"Old Time", oldTime.Humanize())
+            .AddField($"New Time", newTime.Humanize())
+            .Build());
         }
 
         [Command("warn")]

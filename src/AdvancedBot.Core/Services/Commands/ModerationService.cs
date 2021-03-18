@@ -37,7 +37,7 @@ namespace AdvancedBot.Core.Services.Commands
             return infraction;
         }
 
-        public string ChangeInfractionReasonInGuild(ulong guildId, uint warningId, string newReason)
+        public string ChangeInfractionReason(ulong guildId, uint warningId, string newReason)
         {
             var guild = _guilds.GetOrCreateGuildAccount(guildId);
             
@@ -45,6 +45,16 @@ namespace AdvancedBot.Core.Services.Commands
 
             _guilds.SaveGuildAccount(guild);
             return oldReason;
+        }
+
+        public TimeSpan UpdateDurationOnInfraction(ulong guildId, uint caseId, TimeSpan newTime)
+        {
+            var guild = _guilds.GetOrCreateGuildAccount(guildId);
+
+            var oldTime = guild.UpdateInfractionDuration(caseId, newTime);
+
+            _guilds.SaveGuildAccount(guild);
+            return oldTime;
         }
 
         public Infraction RemoveWarningFromGuild(ulong guildId, ulong modId, uint warningId)
@@ -71,7 +81,14 @@ namespace AdvancedBot.Core.Services.Commands
         public async Task<Infraction> BanUserFromGuildAsync(SocketGuildUser user, ulong modId, string reason, TimeSpan time, int pruneDays = 0)
         {
             var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
-            var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Ban, DateTime.UtcNow.Add(time), reason);
+            var endsAt = DateTime.UtcNow.Add(time);
+
+            var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Ban, endsAt, reason);
+
+            if (endsAt > DateTime.UtcNow)
+            {
+                guild.CurrentBans.Add(user.Id, endsAt);
+            }
 
             await user.BanAsync(pruneDays, reason);
             _guilds.SaveGuildAccount(guild);
@@ -84,6 +101,8 @@ namespace AdvancedBot.Core.Services.Commands
             var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Unban, null, "");
 
             user.Guild.RemoveBanAsync(user).GetAwaiter().GetResult();
+            guild.CurrentBans.Remove(user.Id);
+
             _guilds.SaveGuildAccount(guild);
             return infraction;
         }
@@ -108,6 +127,7 @@ namespace AdvancedBot.Core.Services.Commands
 
             var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Unmute, null, "");
             user.RemoveRoleAsync(user.Guild.GetRole(guild.MutedRoleId));
+            guild.CurrentMutes.Remove(user.Id);
 
             _guilds.SaveGuildAccount(guild);
             return infraction;
