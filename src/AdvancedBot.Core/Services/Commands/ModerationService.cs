@@ -88,7 +88,7 @@ namespace AdvancedBot.Core.Services.Commands
             return infraction;
         }
 
-        public void MuteUser(IGuildUser user, ulong modId, TimeSpan time, string reason)
+        public Infraction MuteUser(IGuildUser user, ulong modId, TimeSpan time, string reason)
         {
             var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
             var mutedRole = user.Guild.GetRole(guild.MutedRoleId);
@@ -96,19 +96,21 @@ namespace AdvancedBot.Core.Services.Commands
 
             user.AddRoleAsync(mutedRole);
             guild.CurrentMutes.Add(user.Id, endsAt);
-            guild.AddInfractionToGuild(user.Id, modId, InfractionType.Mute, endsAt, reason);
+            var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Mute, endsAt, reason);
 
             _guilds.SaveGuildAccount(guild);
+            return infraction;
         }
 
-        public void UnmuteUser(IGuildUser user, ulong modId)
+        public Infraction UnmuteUser(IGuildUser user, ulong modId)
         {
             var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
 
-            guild.AddInfractionToGuild(user.Id, modId, InfractionType.Unmute, null, "");
+            var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Unmute, null, "");
             user.RemoveRoleAsync(user.Guild.GetRole(guild.MutedRoleId));
 
             _guilds.SaveGuildAccount(guild);
+            return infraction;
         }
 
         public void CreateOrSetMutedRole(IGuild guild, IRole role = null)

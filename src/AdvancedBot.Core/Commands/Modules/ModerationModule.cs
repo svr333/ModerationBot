@@ -22,6 +22,7 @@ namespace AdvancedBot.Core.Commands.Modules
         }
 
         [Command("case")]
+        [Summary("Shows information about that mod case.")]
         public async Task GetCaseAsync(uint id)
         {
             var infraction = _moderation.GetInfraction(Context.Guild.Id, id);
@@ -47,6 +48,7 @@ namespace AdvancedBot.Core.Commands.Modules
         }
 
         [Command("reason")]
+        [Summary("Change the reason of an existing case.")]
         public async Task ChangeReasonAsync(uint caseId, [Remainder] string newReason)
         {
             var oldReason = _moderation.ChangeInfractionReasonInGuild(Context.Guild.Id, caseId, newReason);
@@ -61,120 +63,199 @@ namespace AdvancedBot.Core.Commands.Modules
             .Build());
         }
 
-        [Command("Duration")]
+        [Command("duration")]
+        [Summary("Change the duration of an existing case.")]
         public async Task ChangeDurationAsync(uint caseId, [Remainder] string newTime)
         {
 
         }
 
         [Command("warn")]
+        [Summary("Warns a user.")]
         public async Task WarnUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason)
         {
-            var warning = _moderation.WarnUserInGuild(user, (SocketGuildUser) Context.User, reason);
-            var dmChannel = await user.GetOrCreateDMChannelAsync();
-
-            await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+            var warning = _moderation.WarnUserInGuild(user, (SocketGuildUser)Context.User, reason);
+            
+            try
             {
-                Title = $"**Galaxy Life Reborn:** You were warned",
-                Color = GetColorOnInfractionType(warning.Type)
+                var dmChannel = await user.GetOrCreateDMChannelAsync();
+                await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+                {
+                    Title = $"**Galaxy Life Reborn:** You were warned",
+                    Color = GetColorOnInfractionType(warning.Type)
+                }
+                .AddField($"Reason", warning.Reason)
+                .Build());
             }
-            .AddField($"Reason", warning.Reason)
-            .Build());
+            catch (Exception)
+            {
+                await ReplyAsync($"Could not dm user to notify him.");
+            }
 
-            await ReplyAsync($"#{warning.Id} | {user.Mention} successfully warned.");
+            await ReplyAsync($"#{warning.Id} | Warned {user.Mention}.");
         }
 
         [Command("delwarn")]
+        [Summary("Deletes an existing warning by case id.")]
         public async Task RemoveWarnAsync(uint caseId)
         {
             var warning = _moderation.RemoveWarningFromGuild(Context.Guild.Id, Context.User.Id, caseId);
             var user = Context.Client.GetUser(warning.Id);
-            var dmChannel = await user.GetOrCreateDMChannelAsync();
 
-            await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+            try
             {
-                Title = $"**Galaxy Life Reborn:** Warning Redacted",
-                Description = $"Warning with the below reason has been redacted by a moderator.\n\u200b",
-                Color = GetColorOnInfractionType(warning.Type)
+                var dmChannel = await user.GetOrCreateDMChannelAsync();
+                await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+                {
+                    Title = $"**Galaxy Life Reborn:** Warning Redacted",
+                    Description = $"Warning with the below reason has been redacted by a moderator.\n\u200b",
+                    Color = GetColorOnInfractionType(warning.Type)
+                }
+                .AddField($"Reason", warning.Reason)
+                .Build());
             }
-            .AddField($"Reason", warning.Reason)
-            .Build());
+            catch (Exception)
+            {
+                await ReplyAsync($"Could not dm user to notify him.");
+            }
 
-            await ReplyAsync($"Successfully removed warning #{caseId} from {user.Username}.");
+            await ReplyAsync($"#{warning.Id} | Removed warning #{caseId} from {user.Username}.");
         }
 
         [Command("kick")]
+        [Summary("Kicks a user.")]
         public async Task KickUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
-            var infraction = await _moderation.KickUserFromGuildAsync(user, Context.User.Id, reason);
-            var dmChannel = await user.GetOrCreateDMChannelAsync();
-
-            await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+            try
             {
-                Title = $"**Galaxy Life Reborn:** You were kicked",
-                Color = GetColorOnInfractionType(infraction.Type)
+                var dmChannel = await user.GetOrCreateDMChannelAsync();
+                await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+                {
+                    Title = $"You were kicked from **Galaxy Life Reborn**",
+                    Color = GetColorOnInfractionType(InfractionType.Kick)
+                }
+                .AddField($"Reason", reason)
+                .Build());
             }
-            .AddField($"Reason", infraction.Reason)
-            .Build());
+            catch (Exception)
+            {
+                await ReplyAsync($"Could not dm user to notify him.");
+            }
 
-            await ReplyAsync($"Successfully kicked {user.Mention}");
+            var infraction = await _moderation.KickUserFromGuildAsync(user, Context.User.Id, reason);
+            await ReplyAsync($"#{infraction.Id} | Kicked {user.Mention}.");
         }
 
-        [Command("ban")][Alias("tempban")]
+        [Command("ban")]
+        [Alias("tempban")]
+        [Summary("Bans a user.")]
         public async Task BanUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
-            var infraction = await _moderation.BanUserFromGuildAsync(user, Context.User.Id, reason, time, 0);
-            var dmChannel = await user.GetOrCreateDMChannelAsync();
 
-            await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+            try
             {
-                Title = $"**Galaxy Life Reborn:** You were banned",
-                Color = GetColorOnInfractionType(infraction.Type)
+                var dmChannel = await user.GetOrCreateDMChannelAsync();
+                await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+                {
+                    Title = $"You were banned from **Galaxy Life Reborn**",
+                    Color = GetColorOnInfractionType(InfractionType.Ban)
+                }
+                .AddField($"Duration", time.Humanize(), true)
+                .AddField($"Reason", reason, true)
+                .Build());
             }
-            .AddField($"Duration", time.Humanize(), true)
-            .AddField($"Reason", infraction.Reason, true)
-            .Build());
+            catch (Exception)
+            {
+                await ReplyAsync($"Could not dm user to notify him.");
+            }
+
+            var infraction = await _moderation.BanUserFromGuildAsync(user, Context.User.Id, reason, time, 7);
 
             if (time.TotalMilliseconds < 1000)
             {
-                await ReplyAsync($"Successfully banned {user.Mention}.");
+                await ReplyAsync($"#{infraction.Id} | Banned {user.Mention}.");
             }
             else
             {
-                await ReplyAsync($"Successfully banned {user.Mention} for {time.Humanize()}");
+                await ReplyAsync($"#{infraction.Id} | Banned {user.Mention} for {time.Humanize()}");
             }
         }
 
         [Command("unban")]
+        [Summary("Unbans a user.")]
         public async Task UnbanUserAsync([EnsureNotSelf] IGuildUser user)
         {
             var infraction = _moderation.UnbanUserFromGuild(Context.User.Id, user);
-            await ReplyAsync($"Successfully unbanned {user.Mention}.");
+            await ReplyAsync($"#{infraction.Id} | Unbanned {user.Mention}.");
         }
 
         [Command("mute")]
+        [Summary("Mutes a user.")]
         public async Task MuteUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
             if (time.TotalMilliseconds < 1000)
                 time = new TimeSpan(14, 0, 0, 0);
 
-            _moderation.MuteUser(user, Context.User.Id, time, reason);
-            await ReplyAsync($"Successfully muted {user.Mention} for {time.Humanize()}.");
+            var infraction = _moderation.MuteUser(user, Context.User.Id, time, reason);
+
+            try
+            {
+                var dmChannel = await user.GetOrCreateDMChannelAsync();
+                await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+                {
+                    Title = $"You were muted in **Galaxy Life Reborn**",
+                    Color = GetColorOnInfractionType(InfractionType.Mute)
+                }
+                .AddField($"Duration", time.Humanize(), true)
+                .AddField($"Reason", reason, true)
+                .Build());
+            }
+            catch (Exception)
+            {
+                await ReplyAsync($"Could not dm user to notify him.");
+            }
+            
+            await ReplyAsync($"#{infraction.Id} | Muted {user.Mention} for {time.Humanize()}.");
         }
 
         [Command("unmute")]
+        [Summary("Unmutes a user.")]
         public async Task UnmuteUserAsync([EnsureNotSelf] SocketGuildUser user)
         {
-            _moderation.UnmuteUser(user, Context.User.Id);
-            await ReplyAsync($"Successfully unmuted {user.Mention}.");
+            var infraction = _moderation.UnmuteUser(user, Context.User.Id);
+
+            try
+            {
+                var dmChannel = await user.GetOrCreateDMChannelAsync();
+                await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+                {
+                    Title = $"Your mute was lifted in **Galaxy Life Reborn**",
+                    Color = GetColorOnInfractionType(InfractionType.Unmute)
+                }
+                .Build());
+            }
+            catch (Exception)
+            {
+                await ReplyAsync($"Could not dm user to notify him.");
+            }
+
+            await ReplyAsync($"#{infraction.Id} | Unmuted {user.Mention}.");
         }
 
         [Command("muterole")]
+        [Summary("Shows you the currently active mute role.")]
         public async Task GetMuteRole()
         {
-            var role = Context.Guild.GetRole(_moderation.GetMutedRoleId(Context.Guild.Id));
+            var roleId = _moderation.GetMutedRoleId(Context.Guild.Id);
+            if (roleId == 0)
+            {
+                await ReplyAsync($"There is currently no muted role active.");
+                return;
+            }
+
+            var role = Context.Guild.GetRole(roleId);
             await ReplyAsync("", false, new EmbedBuilder()
             {
                 Title = $"Muted Role",
@@ -183,8 +264,9 @@ namespace AdvancedBot.Core.Commands.Modules
             }
             .Build());
         }
-        
+
         [Command("muterole")]
+        [Summary("Sets the mute role to the provided role.")]
         public async Task SetMuteRole(IRole role)
         {
             _moderation.CreateOrSetMutedRole(Context.Guild, role);
@@ -192,6 +274,7 @@ namespace AdvancedBot.Core.Commands.Modules
         }
 
         [Command("muterole create")]
+        [Summary("Creates a new role to add as mute role.")]
         public async Task CreateAndSetMuteRole()
         {
             _moderation.CreateOrSetMutedRole(Context.Guild);
@@ -216,7 +299,7 @@ namespace AdvancedBot.Core.Commands.Modules
                     return Color.Green;
             }
         }
-    
+
         private TimeSpan ParseTimeSpanFromString(ref string input)
         {
             var regex = new Regex[] { new Regex("([0-9]+)[yY]"), new Regex("([0-9]+)[wW]"), new Regex("([0-9]+)[dD]"), new Regex("([0-9]+)[hH]"), new Regex("([0-9]+)[mM]"), new Regex("([0-9]+)[sS]") };
@@ -228,8 +311,8 @@ namespace AdvancedBot.Core.Commands.Modules
 
                 if (match.Success)
                 {
-                    regex[i].Replace(input, "");
-                    results[i] = int.Parse(match.Captures[i].Value);
+                    input = regex[i].Replace(input, "");
+                    results[i] = int.Parse(match.Captures[0].Value.ToLower().Replace("y", "").Replace("w", "").Replace("d", "").Replace("h", "").Replace("m", "").Replace("s", ""));
                 }
                 else
                 {
