@@ -64,15 +64,17 @@ namespace AdvancedBot.Core.Services.Commands
             var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Kick, null, reason);
 
             await user.KickAsync(reason);
+            _guilds.SaveGuildAccount(guild);
             return infraction;
         }
 
-        public async Task<Infraction> BanUserFromGuildAsync(SocketGuildUser user, ulong modId, string reason, DateTime? endsAt, int pruneDays = 0)
+        public async Task<Infraction> BanUserFromGuildAsync(SocketGuildUser user, ulong modId, string reason, TimeSpan time, int pruneDays = 0)
         {
             var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
-            var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Ban, endsAt, reason);
+            var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Ban, DateTime.UtcNow.Add(time), reason);
 
             await user.BanAsync(pruneDays, reason);
+            _guilds.SaveGuildAccount(guild);
             return infraction;
         }
 
@@ -82,7 +84,48 @@ namespace AdvancedBot.Core.Services.Commands
             var infraction = guild.AddInfractionToGuild(user.Id, modId, InfractionType.Unban, null, "");
 
             user.Guild.RemoveBanAsync(user).GetAwaiter().GetResult();
+            _guilds.SaveGuildAccount(guild);
             return infraction;
         }
+
+        public void MuteUser(IGuildUser user, ulong modId, TimeSpan time, string reason)
+        {
+            var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
+            var mutedRole = user.Guild.GetRole(guild.MutedRoleId);
+            var endsAt = DateTime.UtcNow.Add(time);
+
+            user.AddRoleAsync(mutedRole);
+            guild.CurrentMutes.Add(user.Id, endsAt);
+            guild.AddInfractionToGuild(user.Id, modId, InfractionType.Mute, endsAt, reason);
+
+            _guilds.SaveGuildAccount(guild);
+        }
+
+        public void UnmuteUser(IGuildUser user, ulong modId)
+        {
+            var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
+
+            guild.AddInfractionToGuild(user.Id, modId, InfractionType.Unmute, null, "");
+            user.RemoveRoleAsync(user.Guild.GetRole(guild.MutedRoleId));
+
+            _guilds.SaveGuildAccount(guild);
+        }
+
+        public void CreateOrSetMutedRole(IGuild guild, IRole role = null)
+        {
+            var gld = _guilds.GetOrCreateGuildAccount(guild.Id);
+
+            if (role is null)
+            {
+                var perms = new GuildPermissions(addReactions: false, sendMessages: false);
+                role = guild.CreateRoleAsync("Muted", perms, null, false, null).GetAwaiter().GetResult();
+            }
+
+            gld.MutedRoleId = role.Id;
+            _guilds.SaveGuildAccount(gld);
+        }
+
+        public ulong GetMutedRoleId(ulong guildId)
+            => _guilds.GetOrCreateGuildAccount(guildId).MutedRoleId;
     }
 }

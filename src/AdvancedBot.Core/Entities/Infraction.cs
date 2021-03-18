@@ -14,6 +14,7 @@ namespace AdvancedBot.Core.Entities
             Type = type;
             FinishesAt = endsAt;
             Reason = reason;
+            Date = DateTime.UtcNow;
         }
 
         public uint Id { get; set; }
@@ -22,5 +23,6 @@ namespace AdvancedBot.Core.Entities
         public string Reason { get; set; }
         public DateTime? FinishesAt { get; set; }
         public InfractionType Type { get; set; }
+        public DateTime Date { get; set; }
     }
 }

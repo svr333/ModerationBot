@@ -14,7 +14,10 @@ namespace AdvancedBot.Core.Entities
         public ulong ModRoleId { get; set; }
         public List<CommandSettings> Commands { get; set; } = new List<CommandSettings>();
         public uint LastUsedModerationId { get; set; } = 0;
+        public ulong MutedRoleId { get; set; }
         public List<Infraction> Infractions { get; set; } = new List<Infraction>();
+        public Dictionary<ulong, DateTime> CurrentMutes { get; set; } = new Dictionary<ulong, DateTime>();
+        public Dictionary<ulong, DateTime> CurrentBans { get; set; } = new Dictionary<ulong, DateTime>();
 
         #endregion
 
