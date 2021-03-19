@@ -44,7 +44,7 @@ namespace AdvancedBot.Core.Commands.Modules
         public async Task SetModRoleAsync(SocketRole role)
         {
             var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
-            guild.SetModRole(role.Id);
+            guild.ModRoleId = role.Id;
             Accounts.SaveGuildAccount(guild);
 
             await ReplyAsync($"Modrole has successfully been changed to `{role.Name}`\n" +

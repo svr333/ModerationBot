@@ -47,6 +47,29 @@ namespace AdvancedBot.Core.Commands.Modules
             await ReplyAsync($"", false, embed.Build());
         }
 
+        [Command("modlogs")]
+        [Summary("Shows the modlogs related to the person.")]
+        public async Task GetModLogsForUserAsync(IGuildUser user)
+        {
+            var infractions = _moderation.GetAllUserInfractions(Context.Guild.Id, user.Id);
+
+            var embed = new EmbedBuilder()
+            {
+                Title = $"Modlogs for {user.Username}:",
+                Color = Color.DarkBlue
+            }
+            .WithFooter($"Requested by {Context.User.Username} | {Context.User.Id}");
+
+            for (int i = 0; i < infractions.Length; i++)
+            {
+                var mod = Context.Client.GetUser(infractions[i].ModeratorId);
+                embed.AddField($"#{infractions[i].Id} | {infractions[i].Type.Humanize()} by {mod.Username}",
+                $"{infractions[i].Date.ToShortDateString()} | {infractions[i].Reason}\n\u200b");
+            }
+
+            await ReplyAsync("", false, embed.Build());
+        }
+
         [Command("reason")]
         [Summary("Change the reason of an existing case.")]
         public async Task ChangeReasonAsync(uint caseId, [Remainder] string newReason)
@@ -130,6 +153,14 @@ namespace AdvancedBot.Core.Commands.Modules
             }
 
             await ReplyAsync($"#{warning.Id} | Removed warning #{caseId} from {user.Username}.");
+        }
+
+        [Command("clearwarn")]
+        [Summary("Clears all warns related to a certain user.")]
+        public async Task RemoveAllUserWarns(IGuildUser user)
+        {
+            _moderation.ClearAllInfractionsForUser(user, Context.User.Id);
+            await ReplyAsync($"Cleared all warns for {user.Mention}.");
         }
 
         [Command("kick")]
@@ -291,6 +322,17 @@ namespace AdvancedBot.Core.Commands.Modules
             var role = Context.Guild.GetRole(_moderation.GetMutedRoleId(Context.Guild.Id));
 
             await ReplyAsync($"Successfully created the mutedrole {role.Mention}.");
+        }
+
+        [Command("modchannel")]
+        [Summary("Set the modlogs channel.")]
+        public async Task SetModLogChannel(ITextChannel channel)
+        {
+            if (Context.Guild.Id != channel.GuildId)
+                throw new Exception($"Channel needs to be in the same guild.");
+
+            _moderation.SetModLogsChannel(channel);
+            await ReplyAsync($"Set modlogs channel to {channel.Mention}.");
         }
 
         private Color GetColorOnInfractionType(InfractionType type)

@@ -15,6 +15,7 @@ namespace AdvancedBot.Core.Entities
         public List<CommandSettings> Commands { get; set; } = new List<CommandSettings>();
         public uint LastUsedModerationId { get; set; } = 0;
         public ulong MutedRoleId { get; set; }
+        public ulong ModLogsChannelId { get; set; }
         public List<Infraction> Infractions { get; set; } = new List<Infraction>();
         public Dictionary<ulong, DateTime> CurrentMutes { get; set; } = new Dictionary<ulong, DateTime>();
         public Dictionary<ulong, DateTime> CurrentBans { get; set; } = new Dictionary<ulong, DateTime>();
@@ -114,9 +115,6 @@ namespace AdvancedBot.Core.Entities
             var command = Commands.Find(x => x.Name == name);
             command.IsEnabled = false;
         }
-
-        public void SetModRole(ulong id)
-            => ModRoleId = id;
 
         #endregion
 
