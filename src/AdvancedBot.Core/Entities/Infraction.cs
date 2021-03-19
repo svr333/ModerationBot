@@ -6,7 +6,7 @@ namespace AdvancedBot.Core.Entities
     public class Infraction
     {
         public Infraction() {} // LiteDB
-        public Infraction(uint id, ulong infractionerId, ulong modId, InfractionType type, DateTime? endsAt = null, string reason = "")
+        public Infraction(uint id, ulong infractionerId, ulong modId, InfractionType type, DateTime? endsAt = null, string reason)
         {
             Id = id;
             ModeratorId = modId;
