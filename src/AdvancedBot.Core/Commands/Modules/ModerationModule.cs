@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AdvancedBot.Core.Commands.Preconditions;
@@ -28,6 +29,7 @@ namespace AdvancedBot.Core.Commands.Modules
         public async Task ShowCurrentInfractionsAsync()
         {
             var timedInf = _moderation.GetCurrentTimedInfractions(Context.Guild.Id);
+            var fields = new List<EmbedField>();
 
             if (timedInf.Length < 1)
             {
@@ -37,7 +39,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
             var embed = new EmbedBuilder()
             {
-                Title = $"Currently on-going infractions for {Context.Guild.Name}",
+                Title = $"Infractions for {Context.Guild.Name}",
                 Color = Color.Blue
             };
 
@@ -50,10 +52,15 @@ namespace AdvancedBot.Core.Commands.Modules
                 if (infractioner != null)
                     infractionerName = $"{infractioner.Username}#{infractioner.DiscriminatorValue}";
 
-                embed.AddField($"Case {timedInf[i].Id} | {timedInf[i].Type} for {infractionerName}", $"{timedInf[i].Reason}" );
+                fields.Add(new EmbedFieldBuilder() 
+                {
+                    Name =$"Case {timedInf[i].Id} | {timedInf[i].Type} for {infractionerName}",
+                    Value = $"{timedInf[i].Reason}"
+                }
+                .Build());
             }
 
-            await ReplyAsync($"", false, embed.Build());
+            await SendPaginatedMessageAsync(fields, null, embed);
         }
 
         [Command("case")]
@@ -87,22 +94,27 @@ namespace AdvancedBot.Core.Commands.Modules
         public async Task GetModLogsForUserAsync(IGuildUser user)
         {
             var infractions = _moderation.GetAllUserInfractions(Context.Guild.Id, user.Id);
+            var fields = new List<EmbedField>();
 
             var embed = new EmbedBuilder()
             {
                 Title = $"Modlogs for {user.Username}:",
                 Color = Color.DarkBlue
-            }
-            .WithFooter($"Requested by {Context.User.Username} | {Context.User.Id}");
+            };
 
             for (int i = 0; i < infractions.Length; i++)
             {
                 var mod = Context.Client.GetUser(infractions[i].ModeratorId);
-                embed.AddField($"#{infractions[i].Id} | {infractions[i].Type.Humanize()} by {mod.Username}",
-                $"{infractions[i].Date.ToShortDateString()} | {infractions[i].Reason}\n\u200b");
+
+                fields.Add(new EmbedFieldBuilder()
+                {
+                    Name = $"Case #{infractions[i].Id} | {infractions[i].Type.Humanize()} by {mod.Username}",
+                    Value = $"{infractions[i].Reason} | {infractions[i].Date.ToShortDateString()}\n\u200b"
+                }
+                .Build());
             }
 
-            await ReplyAsync("", false, embed.Build());
+            await SendPaginatedMessageAsync(fields, null, embed);
         }
 
         [Command("reason")]
@@ -200,6 +212,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("kick")]
         [Summary("Kicks a user.")]
+        [RequireBotPermission(GuildPermission.KickMembers)]
         public async Task KickUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             try
@@ -225,6 +238,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("ban")]
         [Alias("tempban")]
         [Summary("Bans a user.")]
+        [RequireBotPermission(GuildPermission.BanMembers)]
         public async Task BanUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
@@ -261,7 +275,8 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("unban")]
         [Summary("Unbans a user.")]
-        public async Task UnbanUserAsync([EnsureNotSelf] RestUser user)
+        [RequireBotPermission(GuildPermission.BanMembers)]
+        public async Task UnbanUserAsync(IUser user)
         {
             var infraction = _moderation.UnbanUserFromGuild(Context.User.Id, user.Id, Context.Guild.Id);
             await ReplyAsync($"#{infraction.Id} | Unbanned {user.Mention}.");
@@ -269,6 +284,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("mute")]
         [Summary("Mutes a user.")]
+        [RequireBotPermission(GuildPermission.ManageRoles)]
         public async Task MuteUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
@@ -354,6 +370,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("muterole create")]
         [Summary("Creates a new role to add as mute role.")]
+        [RequireBotPermission(GuildPermission.ManageRoles)]
         public async Task CreateAndSetMuteRole()
         {
             _moderation.CreateOrSetMutedRole(Context.Guild);

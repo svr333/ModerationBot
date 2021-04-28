@@ -7,6 +7,8 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using AdvancedBot.Core.Commands;
+using AdvancedBot.Core.Commands.TypeReaders;
+using Discord.Rest;
 
 namespace AdvancedBot.Core.Services.Commands
 {

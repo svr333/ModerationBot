@@ -116,7 +116,7 @@ namespace AdvancedBot.Core.Services.Commands
         {
             var guild = _guilds.GetOrCreateGuildAccount(guildId);
 
-            return guild.Infractions.Where(x => x.InfractionerId == userId).ToArray();
+            return guild.Infractions.Where(x => x.InfractionerId == userId).OrderByDescending(x => x.Date).ToArray();
         }
 
         public Infraction RemoveWarningFromGuild(ulong guildId, ulong modId, uint warningId)
