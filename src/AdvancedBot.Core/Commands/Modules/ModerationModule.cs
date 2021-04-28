@@ -151,7 +151,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("warn")]
         [Summary("Warns a user.")]
-        public async Task WarnUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason)
+        public async Task WarnUserAsync([EnsureNotSelf] IUser user, [Remainder] string reason)
         {
             var warning = _moderation.WarnUserInGuild(user, (SocketGuildUser)Context.User, reason);
             
@@ -238,7 +238,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Alias("tempban")]
         [Summary("Bans a user.")]
         [RequireBotPermission(GuildPermission.BanMembers)]
-        public async Task BanUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task BanUserAsync([EnsureNotSelf] IUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
             if (string.IsNullOrEmpty(reason)) reason = "No reason provided.";
@@ -260,7 +260,7 @@ namespace AdvancedBot.Core.Commands.Modules
                 await ReplyAsync($"Could not dm user to notify him.");
             }
 
-            var infraction = await _moderation.BanUserFromGuildAsync(user, Context.User.Id, reason, time, 7);
+            var infraction = await _moderation.BanUserFromGuildAsync(user, Context.Guild.Id, Context.User.Id, reason, time, 7);
 
             if (time.TotalMilliseconds < 1000)
             {

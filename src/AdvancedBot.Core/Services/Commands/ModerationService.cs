@@ -82,9 +82,9 @@ namespace AdvancedBot.Core.Services.Commands
             return infraction;
         }
 
-        public Infraction WarnUserInGuild(IGuildUser user, IGuildUser moderator, string reason)
+        public Infraction WarnUserInGuild(IUser user, IGuildUser moderator, string reason)
         {
-            var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
+            var guild = _guilds.GetOrCreateGuildAccount(moderator.Guild.Id);
 
             var infraction = AddInfractionToGuild(user.Id, moderator.Id, InfractionType.Warning, null, reason, guild);
 
@@ -140,19 +140,24 @@ namespace AdvancedBot.Core.Services.Commands
             return infraction;
         }
 
-        public async Task<Infraction> BanUserFromGuildAsync(SocketGuildUser user, ulong modId, string reason, TimeSpan time, int pruneDays = 0)
+        public async Task<Infraction> BanUserFromGuildAsync(IUser user, ulong guildId, ulong modId, string reason, TimeSpan time, int pruneDays = 0)
         {
-            var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
-            var endsAt = DateTime.UtcNow.Add(time);
+            var guild = _guilds.GetOrCreateGuildAccount(guildId);
+            DateTime? endsAt = null;
+
+            if (time.TotalMilliseconds > 1000)
+            {
+                endsAt = DateTime.UtcNow.Add(time);
+            }
 
             var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Ban, endsAt, reason, guild);
 
-            if (endsAt > DateTime.UtcNow)
+            if (endsAt != null)
             {
                 guild.TimedInfractions.Add(infraction);
             }
 
-            await user.BanAsync(pruneDays, reason);
+            await _client.GetGuild(guildId).AddBanAsync(user, pruneDays, reason);
             _guilds.SaveGuildAccount(guild);
             return infraction;
         }
@@ -163,7 +168,14 @@ namespace AdvancedBot.Core.Services.Commands
             var guild = _guilds.GetOrCreateGuildAccount(guildId);
             var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Unban, null, "", guild);
 
-            _client.GetGuild(guildId).RemoveBanAsync(user).GetAwaiter().GetResult();
+            try
+            {
+                _client.GetGuild(guildId).RemoveBanAsync(user).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                throw new Exception($"User isn't banned.");
+            }
             
             var inf = guild.TimedInfractions.Find(x => x.InfractionerId == user.Id && x.Type == InfractionType.Ban);
             if (inf != null)
@@ -279,8 +291,8 @@ namespace AdvancedBot.Core.Services.Commands
 
         private Embed GetMessageEmbedForLog(Infraction infraction)
         {
-            var moderator = _client.GetUser(infraction.ModeratorId);
-            var infractioner = _client.GetUser(infraction.InfractionerId);
+            var moderator = _client.Rest.GetUserAsync(infraction.ModeratorId).GetAwaiter().GetResult();
+            var infractioner = _client.Rest.GetUserAsync(infraction.InfractionerId).GetAwaiter().GetResult();
 
             var embed = new EmbedBuilder()
             {
