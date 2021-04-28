@@ -24,7 +24,6 @@ namespace AdvancedBot.Core
                 AlwaysDownloadUsers = true,
                 MessageCacheSize = 1000
             });
-
             _commands = commands ?? new CustomCommandService(new CustomCommandServiceConfig
             {
                 CaseSensitiveCommands = false,

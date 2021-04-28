@@ -6,6 +6,7 @@ using AdvancedBot.Core.Entities.Enums;
 using AdvancedBot.Core.Services.Commands;
 using Discord;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 using Humanizer;
 
@@ -19,6 +20,40 @@ namespace AdvancedBot.Core.Commands.Modules
         public ModerationModule(ModerationService moderation)
         {
             _moderation = moderation;
+        }
+
+        [Command("infractions")]
+        [Alias("moderations", "mutes", "bans")]
+        [Summary("Shows all on-going timed infractions (mutes/bans)")]
+        public async Task ShowCurrentInfractionsAsync()
+        {
+            var timedInf = _moderation.GetCurrentTimedInfractions(Context.Guild.Id);
+
+            if (timedInf.Length < 1)
+            {
+                await ReplyAsync($"There are currently no active infractions.");
+                return;
+            }
+
+            var embed = new EmbedBuilder()
+            {
+                Title = $"Currently on-going infractions for {Context.Guild.Name}",
+                Color = Color.Blue
+            };
+
+            for (int i = 0; i < timedInf.Length; i++)
+            {
+                var mod = Context.Client.GetUser(timedInf[i].ModeratorId);
+                var infractioner = Context.Client.GetUser(timedInf[i].InfractionerId);
+                var infractionerName = $"{timedInf[i].InfractionerId}";
+
+                if (infractioner != null)
+                    infractionerName = $"{infractioner.Username}#{infractioner.DiscriminatorValue}";
+
+                embed.AddField($"Case {timedInf[i].Id} | {timedInf[i].Type} for {infractionerName}", $"{timedInf[i].Reason}" );
+            }
+
+            await ReplyAsync($"", false, embed.Build());
         }
 
         [Command("case")]
@@ -37,11 +72,11 @@ namespace AdvancedBot.Core.Commands.Modules
             .WithFooter($"Id: {infraction.InfractionerId} | ModId: {moderator.Id}")
             .AddField($"User", $"{infractioner.Mention}", true)
             .AddField($"Moderator", $"{moderator.Mention}", true)
-            .WithColor(GetColorOnInfractionType(infraction.Type));
+            .WithColor(_moderation.GetColorFromInfractionType(infraction.Type));
 
             if (infraction.FinishesAt != null)
             {
-                embed.AddField($"Ends At", $"{infraction.FinishesAt.Humanize()}, true");
+                embed.AddField($"Ends At", $"{infraction.FinishesAt.Humanize()}", true);
             }
 
             await ReplyAsync($"", false, embed.Build());
@@ -114,8 +149,8 @@ namespace AdvancedBot.Core.Commands.Modules
                 var dmChannel = await user.GetOrCreateDMChannelAsync();
                 await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
                 {
-                    Title = $"**Galaxy Life Reborn:** You were warned",
-                    Color = GetColorOnInfractionType(warning.Type)
+                    Title = $"**{Context.Guild.Name}:** You were warned",
+                    Color = _moderation.GetColorFromInfractionType(warning.Type)
                 }
                 .AddField($"Reason", warning.Reason)
                 .Build());
@@ -140,9 +175,9 @@ namespace AdvancedBot.Core.Commands.Modules
                 var dmChannel = await user.GetOrCreateDMChannelAsync();
                 await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
                 {
-                    Title = $"**Galaxy Life Reborn:** Warning Redacted",
+                    Title = $"**{Context.Guild.Name}:** Warning Redacted",
                     Description = $"Warning with the below reason has been redacted by a moderator.\n\u200b",
-                    Color = GetColorOnInfractionType(warning.Type)
+                    Color = _moderation.GetColorFromInfractionType(warning.Type)
                 }
                 .AddField($"Reason", warning.Reason)
                 .Build());
@@ -172,8 +207,8 @@ namespace AdvancedBot.Core.Commands.Modules
                 var dmChannel = await user.GetOrCreateDMChannelAsync();
                 await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
                 {
-                    Title = $"You were kicked from **Galaxy Life Reborn**",
-                    Color = GetColorOnInfractionType(InfractionType.Kick)
+                    Title = $"You were kicked from **{Context.Guild.Name}**",
+                    Color = _moderation.GetColorFromInfractionType(InfractionType.Kick)
                 }
                 .AddField($"Reason", reason)
                 .Build());
@@ -193,14 +228,15 @@ namespace AdvancedBot.Core.Commands.Modules
         public async Task BanUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
+            if (string.IsNullOrEmpty(reason)) reason = "No reason provided.";
 
             try
             {
                 var dmChannel = await user.GetOrCreateDMChannelAsync();
                 await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
                 {
-                    Title = $"You were banned from **Galaxy Life Reborn**",
-                    Color = GetColorOnInfractionType(InfractionType.Ban)
+                    Title = $"You were banned from **{Context.Guild.Name}**",
+                    Color = _moderation.GetColorFromInfractionType(InfractionType.Ban)
                 }
                 .AddField($"Duration", time.Humanize(), true)
                 .AddField($"Reason", reason, true)
@@ -225,9 +261,9 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("unban")]
         [Summary("Unbans a user.")]
-        public async Task UnbanUserAsync([EnsureNotSelf] IGuildUser user)
+        public async Task UnbanUserAsync([EnsureNotSelf] RestUser user)
         {
-            var infraction = _moderation.UnbanUserFromGuild(Context.User.Id, user);
+            var infraction = _moderation.UnbanUserFromGuild(Context.User.Id, user.Id, Context.Guild.Id);
             await ReplyAsync($"#{infraction.Id} | Unbanned {user.Mention}.");
         }
 
@@ -236,6 +272,8 @@ namespace AdvancedBot.Core.Commands.Modules
         public async Task MuteUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
+            if (string.IsNullOrEmpty(reason)) reason = "No reason provided.";
+
             if (time.TotalMilliseconds < 1000)
                 time = new TimeSpan(14, 0, 0, 0);
 
@@ -246,8 +284,8 @@ namespace AdvancedBot.Core.Commands.Modules
                 var dmChannel = await user.GetOrCreateDMChannelAsync();
                 await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
                 {
-                    Title = $"You were muted in **Galaxy Life Reborn**",
-                    Color = GetColorOnInfractionType(InfractionType.Mute)
+                    Title = $"You were muted in **{Context.Guild.Name}**",
+                    Color = _moderation.GetColorFromInfractionType(InfractionType.Mute)
                 }
                 .AddField($"Duration", time.Humanize(), true)
                 .AddField($"Reason", reason, true)
@@ -272,8 +310,8 @@ namespace AdvancedBot.Core.Commands.Modules
                 var dmChannel = await user.GetOrCreateDMChannelAsync();
                 await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
                 {
-                    Title = $"Your mute was lifted in **Galaxy Life Reborn**",
-                    Color = GetColorOnInfractionType(InfractionType.Unmute)
+                    Title = $"Your mute was lifted in **{Context.Guild.Name}**",
+                    Color = _moderation.GetColorFromInfractionType(InfractionType.Unmute)
                 }
                 .Build());
             }
@@ -333,23 +371,6 @@ namespace AdvancedBot.Core.Commands.Modules
 
             _moderation.SetModLogsChannel(channel);
             await ReplyAsync($"Set modlogs channel to {channel.Mention}.");
-        }
-
-        private Color GetColorOnInfractionType(InfractionType type)
-        {
-            switch (type)
-            {
-                case InfractionType.Warning:
-                    return Color.Orange;
-                case InfractionType.Mute:
-                    return Color.Red;
-                case InfractionType.Kick:
-                    return Color.DarkOrange;
-                case InfractionType.Ban:
-                    return Color.DarkRed;
-                default:
-                    return Color.Green;
-            }
         }
 
         private TimeSpan ParseTimeSpanFromString(ref string input)

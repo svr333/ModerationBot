@@ -17,8 +17,7 @@ namespace AdvancedBot.Core.Entities
         public ulong MutedRoleId { get; set; }
         public ulong ModLogsChannelId { get; set; }
         public List<Infraction> Infractions { get; set; } = new List<Infraction>();
-        public Dictionary<ulong, DateTime> CurrentMutes { get; set; } = new Dictionary<ulong, DateTime>();
-        public Dictionary<ulong, DateTime> CurrentBans { get; set; } = new Dictionary<ulong, DateTime>();
+        public List<Infraction> TimedInfractions { get; set; } = new List<Infraction>();
 
         #endregion
 

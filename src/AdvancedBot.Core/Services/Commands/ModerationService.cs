@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Timers;
 using AdvancedBot.Core.Entities;
 using AdvancedBot.Core.Entities.Enums;
 using AdvancedBot.Core.Services.DataStorage;
 using Discord;
 using Discord.WebSocket;
+using Humanizer;
 
 namespace AdvancedBot.Core.Services.Commands
 {
@@ -13,11 +16,61 @@ namespace AdvancedBot.Core.Services.Commands
     {
         private GuildAccountService _guilds;
         private DiscordSocketClient _client;
+        private Timer _infractionChecker = new Timer(1000 * 60 * 1);
 
         public ModerationService(GuildAccountService guilds, DiscordSocketClient client)
         {
             _guilds = guilds;
             _client = client;
+
+            _infractionChecker.Elapsed += CheckInfractions;
+
+            _infractionChecker.Start();
+        }
+
+        private void CheckInfractions(object sender, ElapsedEventArgs e)
+        {
+            var guilds = _client.Guilds.ToArray();
+
+            for (int i = 0; i < guilds.Length; i++)
+            {
+                var guild = _guilds.GetOrCreateGuildAccount(guilds[i].Id);
+
+                if (!guild.TimedInfractions.Any())
+                    continue;
+
+                var infractionsToRemove = new List<Infraction>();
+
+                for (int j = 0; j < guild.TimedInfractions.ToArray().Length; j++)
+                {
+                    if (guild.TimedInfractions[j].FinishesAt > DateTime.Now)
+                        continue;
+
+                    infractionsToRemove.Add(guild.TimedInfractions[j]);
+
+                    switch (guild.TimedInfractions[j].Type)
+                    {
+                        case InfractionType.Mute:
+                            var user = guilds[i].GetUser(guild.TimedInfractions[j].InfractionerId);
+                            UnmuteUser(user, _client.CurrentUser.Id);
+                            break;
+                        case InfractionType.Ban:
+                            UnbanUserFromGuild(_client.CurrentUser.Id, guild.TimedInfractions[j].InfractionerId, guilds[i].Id);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                for (int j = 0; j < infractionsToRemove.Count; j++)
+                {
+                    guild.TimedInfractions.Remove(infractionsToRemove[j]);
+                }
+
+                _guilds.SaveGuildAccount(guild);
+            }
+
+            Console.WriteLine($"Successfully checked all guilds for muted/banned people.");
         }
 
         public Infraction GetInfraction(ulong guildId, uint id)
@@ -96,7 +149,7 @@ namespace AdvancedBot.Core.Services.Commands
 
             if (endsAt > DateTime.UtcNow)
             {
-                guild.CurrentBans.Add(user.Id, endsAt);
+                guild.TimedInfractions.Add(infraction);
             }
 
             await user.BanAsync(pruneDays, reason);
@@ -104,13 +157,17 @@ namespace AdvancedBot.Core.Services.Commands
             return infraction;
         }
 
-        public Infraction UnbanUserFromGuild(ulong modId, IGuildUser user)
+        public Infraction UnbanUserFromGuild(ulong modId, ulong infractionerId, ulong guildId)
         {
-            var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
+            var user = _client.Rest.GetUserAsync(infractionerId).GetAwaiter().GetResult();
+            var guild = _guilds.GetOrCreateGuildAccount(guildId);
             var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Unban, null, "", guild);
 
-            user.Guild.RemoveBanAsync(user).GetAwaiter().GetResult();
-            guild.CurrentBans.Remove(user.Id);
+            _client.GetGuild(guildId).RemoveBanAsync(user).GetAwaiter().GetResult();
+            
+            var inf = guild.TimedInfractions.Find(x => x.InfractionerId == user.Id && x.Type == InfractionType.Ban);
+            if (inf != null)
+                guild.TimedInfractions.Remove(inf);
 
             _guilds.SaveGuildAccount(guild);
             return infraction;
@@ -122,9 +179,13 @@ namespace AdvancedBot.Core.Services.Commands
             var mutedRole = user.Guild.GetRole(guild.MutedRoleId);
             var endsAt = DateTime.UtcNow.Add(time);
 
+            var inf = guild.TimedInfractions.Find(x => x.InfractionerId == user.Id && x.Type == InfractionType.Mute);
+            if (inf != null)
+                guild.TimedInfractions.Remove(inf);
+
             user.AddRoleAsync(mutedRole);
-            guild.CurrentMutes.Add(user.Id, endsAt);
             var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Mute, endsAt, reason, guild);
+            guild.TimedInfractions.Add(infraction);
 
             _guilds.SaveGuildAccount(guild);
             return infraction;
@@ -136,7 +197,10 @@ namespace AdvancedBot.Core.Services.Commands
 
             var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Unmute, null, "", guild);
             user.RemoveRoleAsync(user.Guild.GetRole(guild.MutedRoleId));
-            guild.CurrentMutes.Remove(user.Id);
+            
+            var inf = guild.TimedInfractions.Find(x => x.InfractionerId == user.Id && x.Type == InfractionType.Mute);
+            if (inf != null)
+                guild.TimedInfractions.Remove(inf);
 
             _guilds.SaveGuildAccount(guild);
             return infraction;
@@ -167,6 +231,9 @@ namespace AdvancedBot.Core.Services.Commands
             }
         }
 
+        public Infraction[] GetCurrentTimedInfractions(ulong guildId)
+            => _guilds.GetOrCreateGuildAccount(guildId).TimedInfractions.OrderBy(x => x.Type).ToArray();
+
         public void SetModLogsChannel(ITextChannel channel)
         {
             var guild = _guilds.GetOrCreateGuildAccount(channel.GuildId);
@@ -178,14 +245,60 @@ namespace AdvancedBot.Core.Services.Commands
         public ulong GetMutedRoleId(ulong guildId)
             => _guilds.GetOrCreateGuildAccount(guildId).MutedRoleId;
     
+        public Color GetColorFromInfractionType(InfractionType type)
+        {
+            switch (type)
+            {
+                case InfractionType.Warning:
+                    return Color.Orange;
+                case InfractionType.Mute:
+                    return Color.Red;
+                case InfractionType.Kick:
+                    return Color.DarkOrange;
+                case InfractionType.Ban:
+                    return Color.DarkRed;
+                default:
+                    return Color.Green;
+            }
+        }
+
         private Infraction AddInfractionToGuild(ulong userId, ulong modId, InfractionType type, DateTime? endsAt, string reason, GuildAccount guild)
         {
+            var infraction = guild.AddInfractionToGuild(userId, modId, type, endsAt, reason);
+
             if (guild.ModLogsChannelId != 0)
             {
-                (_client.GetChannel(guild.ModLogsChannelId) as ITextChannel).SendMessageAsync($"{userId}").GetAwaiter().GetResult();
+                var channel = _client.GetChannel(guild.ModLogsChannelId) as ITextChannel;
+                var embed = GetMessageEmbedForLog(infraction);
+
+                channel.SendMessageAsync("", false, embed).GetAwaiter().GetResult();
             }
             
-            return guild.AddInfractionToGuild(userId, modId, type, endsAt, reason);
+            return infraction;
+        }
+
+        private Embed GetMessageEmbedForLog(Infraction infraction)
+        {
+            var moderator = _client.GetUser(infraction.ModeratorId);
+            var infractioner = _client.GetUser(infraction.InfractionerId);
+
+            var embed = new EmbedBuilder()
+            {
+                Title = $"Case {infraction.Id} | {infraction.Type.Humanize()}",
+                Color = GetColorFromInfractionType(infraction.Type)
+            }
+            .AddField("Moderator", moderator.Mention, true)
+            .AddField("Infractioner", infractioner.Mention, true)
+            .WithFooter($"Id: {infractioner.Id}")
+            .WithCurrentTimestamp();
+
+            if (!string.IsNullOrEmpty(infraction.Reason))
+                embed.AddField("Reason", infraction.Reason, true);
+
+            if (infraction.FinishesAt != null)
+                embed.AddField("Duration", (DateTime.UtcNow - infraction.FinishesAt.Value).Humanize(), true);
+
+            return embed.Build();
         }
     }
 }
