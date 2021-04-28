@@ -7,7 +7,6 @@ using AdvancedBot.Core.Entities.Enums;
 using AdvancedBot.Core.Services.Commands;
 using Discord;
 using Discord.Commands;
-using Discord.Rest;
 using Discord.WebSocket;
 using Humanizer;
 
