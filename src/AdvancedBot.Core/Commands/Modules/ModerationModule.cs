@@ -22,8 +22,8 @@ namespace AdvancedBot.Core.Commands.Modules
             _moderation = moderation;
         }
 
-        [Command("infractions")]
-        [Alias("moderations", "mutes", "bans")]
+        [Command("moderations")]
+        [Alias("infractions", "mutes", "bans")]
         [Summary("Shows all on-going timed infractions (mutes/bans)")]
         public async Task ShowCurrentInfractionsAsync()
         {
@@ -38,7 +38,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
             var embed = new EmbedBuilder()
             {
-                Title = $"Infractions for {Context.Guild.Name}",
+                Title = $"Moderations for {Context.Guild.Name}",
                 Color = Color.Blue
             };
 
@@ -212,7 +212,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("kick")]
         [Summary("Kicks a user.")]
         [RequireBotPermission(GuildPermission.KickMembers)]
-        public async Task KickUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task KickUserAsync([EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             try
             {
@@ -284,7 +284,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("mute")]
         [Summary("Mutes a user.")]
         [RequireBotPermission(GuildPermission.ManageRoles)]
-        public async Task MuteUserAsync([EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task MuteUserAsync([EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
             if (string.IsNullOrEmpty(reason)) reason = "No reason provided.";

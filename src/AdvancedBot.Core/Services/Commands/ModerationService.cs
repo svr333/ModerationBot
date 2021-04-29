@@ -131,12 +131,13 @@ namespace AdvancedBot.Core.Services.Commands
             return infraction;
         }
 
-        public async Task<Infraction> KickUserFromGuildAsync(SocketGuildUser user, ulong modId, string reason)
+        public async Task<Infraction> KickUserFromGuildAsync(IGuildUser user, ulong modId, string reason)
         {
-            var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
+            var guild = _guilds.GetOrCreateGuildAccount(user.GuildId);
             var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Kick, null, reason, guild);
 
             await user.KickAsync(reason);
+
             _guilds.SaveGuildAccount(guild);
             return infraction;
         }
@@ -189,6 +190,7 @@ namespace AdvancedBot.Core.Services.Commands
         public Infraction MuteUser(IGuildUser user, ulong modId, TimeSpan time, string reason)
         {
             var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
+
             var mutedRole = user.Guild.GetRole(guild.MutedRoleId);
             var endsAt = DateTime.UtcNow.Add(time);
 
