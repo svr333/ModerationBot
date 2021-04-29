@@ -17,13 +17,16 @@ namespace AdvancedBot.Core.Services.Commands
         private readonly CustomCommandService _commands;
         private readonly IServiceProvider _services;
         private readonly GuildAccountService _accounts;
+        private readonly AutoModerationService _automod;
 
-        public CommandHandlerService(DiscordSocketClient client, CustomCommandService commands, IServiceProvider services, GuildAccountService accounts)
+        public CommandHandlerService(DiscordSocketClient client, CustomCommandService commands, IServiceProvider services,
+        GuildAccountService accounts, AutoModerationService automod)
         {
             _commands = commands;
             _client = client;
             _services = services;
             _accounts = accounts;
+            _automod = automod;
         }
 
         public async Task InitializeAsync()
@@ -46,8 +49,10 @@ namespace AdvancedBot.Core.Services.Commands
                 return;
             }
 
-            var guildId = (message.Author as SocketGuildUser).Guild.Id;
-            var guild = _accounts.GetOrCreateGuildAccount(guildId);
+            var author = message.Author as SocketGuildUser;
+            var guild = _accounts.GetOrCreateGuildAccount(author.Guild.Id);
+
+            await _automod.HandleMessageReceivedChecksAsync(guild, message);
 
             int argPos = 0;
             if (!message.HasPrefix(_client, out argPos, guild.Prefixes)) 

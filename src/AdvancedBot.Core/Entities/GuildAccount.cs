@@ -14,8 +14,11 @@ namespace AdvancedBot.Core.Entities
         public ulong ModRoleId { get; set; }
         public List<CommandSettings> Commands { get; set; } = new List<CommandSettings>();
         public uint LastUsedModerationId { get; set; } = 0;
+        public uint LastUsedAutoModId { get; set; } = 0;
         public ulong MutedRoleId { get; set; }
         public ulong ModLogsChannelId { get; set; }
+        public AutoModSettings AutoMod { get; set; } = new AutoModSettings();
+        public List<AutoModInfraction> AutoModInfractions { get; set; } = new List<AutoModInfraction>();
         public List<Infraction> Infractions { get; set; } = new List<Infraction>();
         public List<Infraction> TimedInfractions { get; set; } = new List<Infraction>();
 
@@ -161,6 +164,18 @@ namespace AdvancedBot.Core.Entities
             var oldTime = (infraction.FinishesAt - DateTime.UtcNow).Value;
             infraction.FinishesAt = DateTime.UtcNow.Add(newTime);
             return oldTime;
+        }
+
+        #endregion
+    
+        #region AutoModeration
+
+        public AutoModInfraction AddAutoModInfractionToGuild(ulong userId, AutoModInfractionType type, string trigger)
+        {
+            var infraction = new AutoModInfraction(++LastUsedAutoModId, userId, type, trigger);
+            AutoModInfractions.Add(infraction);
+
+            return infraction;
         }
 
         #endregion

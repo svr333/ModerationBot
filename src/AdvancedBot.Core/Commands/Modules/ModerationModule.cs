@@ -382,10 +382,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Summary("Set the modlogs channel.")]
         public async Task SetModLogChannel(ITextChannel channel)
         {
-            if (Context.Guild.Id != channel.GuildId)
-                throw new Exception($"Channel needs to be in the same guild.");
-
-            _moderation.SetModLogsChannel(channel);
+            _moderation.SetModLogsChannel(Context.Guild.Id, channel);
             await ReplyAsync($"Set modlogs channel to {channel.Mention}.");
         }
 

@@ -68,6 +68,7 @@ namespace AdvancedBot.Core
                 .AddSingleton<PaginatorService>()
                 .AddSingleton<CommandPermissionService>()
                 .AddSingleton<ModerationService>()
+                .AddSingleton<AutoModerationService>()
                 .BuildServiceProvider();
         }
     }

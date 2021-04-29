@@ -249,9 +249,12 @@ namespace AdvancedBot.Core.Services.Commands
         public Infraction[] GetCurrentTimedInfractions(ulong guildId)
             => _guilds.GetOrCreateGuildAccount(guildId).TimedInfractions.OrderBy(x => x.Type).ToArray();
 
-        public void SetModLogsChannel(ITextChannel channel)
+        public void SetModLogsChannel(ulong guildId, ITextChannel channel)
         {
-            var guild = _guilds.GetOrCreateGuildAccount(channel.GuildId);
+            if (channel.GuildId != guildId)
+                throw new Exception($"Channel needs to be in the same guild.");
+
+            var guild = _guilds.GetOrCreateGuildAccount(guildId);
             guild.ModLogsChannelId = channel.Id;
 
             _guilds.SaveGuildAccount(guild);
@@ -303,7 +306,7 @@ namespace AdvancedBot.Core.Services.Commands
                 Color = GetColorFromInfractionType(infraction.Type)
             }
             .AddField("Moderator", moderator.Mention, true)
-            .AddField("Infractioner", infractioner.Mention, true)
+            .AddField("User", infractioner.Mention, true)
             .WithFooter($"Id: {infractioner.Id}")
             .WithCurrentTimestamp();
 
