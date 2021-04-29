@@ -73,7 +73,7 @@ namespace AdvancedBot.Core.Commands.Modules
             var embed = new EmbedBuilder()
             {
                 Title = $"#{infraction.Id} | {infraction.Type.Humanize()}",
-                Description = $"**Reason:** {infraction.Reason}"
+                Description = $"**Reason:** {infraction.Reason}\n\u200b"
             }
             .WithFooter($"Id: {infraction.InfractionerId} | ModId: {moderator.Id}")
             .AddField($"User", $"{infractioner.Mention}", true)
