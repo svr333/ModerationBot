@@ -9,6 +9,7 @@ using AdvancedBot.Core.Services.DataStorage;
 using Discord;
 using Discord.WebSocket;
 using Humanizer;
+using Humanizer.Localisation;
 
 namespace AdvancedBot.Core.Services.Commands
 {
@@ -145,7 +146,7 @@ namespace AdvancedBot.Core.Services.Commands
             var guild = _guilds.GetOrCreateGuildAccount(guildId);
             DateTime? endsAt = null;
 
-            if (time.TotalMilliseconds > 1000)
+            if (time.TotalMilliseconds >= 1000)
             {
                 endsAt = DateTime.UtcNow.Add(time);
             }
@@ -308,7 +309,7 @@ namespace AdvancedBot.Core.Services.Commands
                 embed.AddField("Reason", infraction.Reason, true);
 
             if (infraction.FinishesAt != null)
-                embed.AddField("Duration", (DateTime.UtcNow - infraction.FinishesAt.Value).Humanize(), true);
+                embed.AddField("Duration", (DateTime.UtcNow - infraction.FinishesAt.Value.AddMilliseconds(500)).Humanize(4, minUnit: TimeUnit.Second), true);
 
             return embed.Build();
         }

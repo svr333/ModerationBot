@@ -289,7 +289,7 @@ namespace AdvancedBot.Core.Commands.Modules
             var time = ParseTimeSpanFromString(ref reason);
             if (string.IsNullOrEmpty(reason)) reason = "No reason provided.";
 
-            if (time.TotalMilliseconds < 1000)
+            if (time.TotalMilliseconds <= 1000)
                 time = new TimeSpan(14, 0, 0, 0);
 
             var infraction = _moderation.MuteUser(user, Context.User.Id, time, reason);
