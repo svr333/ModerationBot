@@ -17,6 +17,33 @@ namespace AdvancedBot.Core.Commands.Modules
             await ReplyAsync($"Not implemented yet");
         }
 
+        [Command("modchannel")]
+        [Summary("Gets the automod log channel.")]
+        public async Task GetAutoModLogChannel()
+        {
+            var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
+            var channel = Context.Client.GetChannel(guild.AutoMod.LogChannelId) as ITextChannel;
+
+            if (channel is null)
+                throw new Exception($"The channel is invalid, please enter a new one.");
+
+            await ReplyAsync($"Automod log channel is set to {channel.Mention}.");
+        }
+
+        [Command("modchannel")]
+        [Summary("Sets the automod log channel.")]
+        public async Task SetAutoModLogChannel(ITextChannel channel)
+        {
+            var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
+            
+            if (Context.Guild.Id != channel.GuildId)
+                throw new Exception($"Channel needs to be in the same server");
+
+            guild.AutoMod.LogChannelId = channel.Id;
+            Accounts.SaveGuildAccount(guild);
+            await ReplyAsync($"Automod log channel set to {channel.Mention}.");
+        }
+
         [Group("bannedwords")]
         [Alias("bw")]
         [Summary("Subcategory that holds all commands related to banned words.")]
@@ -143,9 +170,88 @@ namespace AdvancedBot.Core.Commands.Modules
         public class AntiSpamModule : AutoModerationModule
         {
             [Command("")]
+            [Summary("Shows the current antispam settings.")]
             public async Task ShowAntiSpamAsync()
             {
+                var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
 
+                await ReplyAsync($"Current limit is {guild.AutoMod.SpamSettings.MaxMessagesPerFiveSeconds} messages per five seconds.\nSet to 0 to disable.");
+            }
+
+            [Command("set")]
+            [Summary("Sets the antispam limit.")]
+            public async Task SetAntiSpamAsync(uint messagesPerFiveSeconds)
+            {
+                var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
+
+                if (messagesPerFiveSeconds >= 10)
+                    throw new Exception($"This number is bigger than Discord's built-in ratelimit.");
+
+                guild.AutoMod.SpamSettings.MaxMessagesPerFiveSeconds = (int) messagesPerFiveSeconds;
+
+                Accounts.SaveGuildAccount(guild);
+                await ShowAntiSpamAsync();
+            }
+
+            [Command("whitelist add")]
+            [Alias("wl add")]
+            [Summary("Adds a role to the whitelist.")]
+            public async Task AddToWhitelistAsync(IRole role)
+            {
+                var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
+
+                if (guild.AutoMod.SpamSettings.WhitelistedRoles.Contains(role.Id))
+                    throw new Exception($"Role is already whitelisted.");
+
+                guild.AutoMod.SpamSettings.WhitelistedRoles.Add(role.Id);
+
+                Accounts.SaveGuildAccount(guild);
+                await ReplyAsync($"Added {role.Mention} to the whitelist.");
+            }
+
+            [Command("whitelist add")]
+            [Alias("wl add")]
+            [Summary("Adds a channel to the whitelist.")]
+            public async Task AddToWhitelistAsync(ITextChannel channel)
+            {
+                var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
+
+                if (guild.AutoMod.SpamSettings.WhitelistedChannels.Contains(channel.Id))
+                    throw new Exception($"Channel is already whitelisted.");
+
+                guild.AutoMod.SpamSettings.WhitelistedChannels.Add(channel.Id);
+                Accounts.SaveGuildAccount(guild);
+                await ReplyAsync($"Added {channel.Mention} to the whitelist.");
+            }
+
+            [Command("whitelist remove")]
+            [Alias("wl remove")]
+            [Summary("Removes a role from the whitelist.")]
+            public async Task RemoveFromWhitelistAsync(IRole role)
+            {
+                var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
+
+                if (!guild.AutoMod.SpamSettings.WhitelistedRoles.Contains(role.Id))
+                    throw new Exception($"Role isn't on the whitelist.");
+
+                guild.AutoMod.SpamSettings.WhitelistedRoles.Remove(role.Id);
+                Accounts.SaveGuildAccount(guild);
+                await ReplyAsync($"Removed {role.Mention} from the whitelist.");
+            }
+
+            [Command("whitelist remove")]
+            [Alias("wl remove")]
+            [Summary("Removes a channel from the whitelist.")]
+            public async Task RemoveFromWhitelistAsync(ITextChannel channel)
+            {
+                var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
+
+                if (!guild.AutoMod.SpamSettings.WhitelistedChannels.Contains(channel.Id))
+                    throw new Exception($"Channel isn't on the whitelist.");
+
+                guild.AutoMod.SpamSettings.WhitelistedChannels.Remove(channel.Id);
+                Accounts.SaveGuildAccount(guild);
+                await ReplyAsync($"Removed {channel.Mention} from the whitelist.");
             }
         }
     }

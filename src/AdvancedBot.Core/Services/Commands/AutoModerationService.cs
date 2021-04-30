@@ -30,9 +30,13 @@ namespace AdvancedBot.Core.Services.Commands
             if (MessageContainsBlacklistedWords(guild.AutoMod, message.Content.ToLower(), out string trigger)
             && !UserCanBypass(message.Author as IGuildUser, message.Channel.Id, guild.AutoMod.BlacklistedWordsSettings.WhitelistedRoles, guild.AutoMod.BlacklistedWordsSettings.WhitelistedChannels))
             {
-                await AddAutoModInfractionToGuild(guild, message.Author.Id, AutoModInfractionType.BannedWord, trigger);
+                await AddAutoModInfractionToGuild(guild, message.Author.Id, AutoModInfractionType.BlacklistedWords, trigger);
                 await message.DeleteAsync();
             }
+            else if (UserIsSpamming()
+            && !UserCanBypass(message.Author as IGuildUser, message.Channel.Id, guild.AutoMod.SpamSettings.WhitelistedRoles, guild.AutoMod.SpamSettings.WhitelistedChannels))
+
+            _guilds.SaveGuildAccount(guild);
         }
 
         public void SetAutoModLogChannel(ulong guildId, ITextChannel channel)
@@ -67,10 +71,11 @@ namespace AdvancedBot.Core.Services.Commands
 
             var embed = new EmbedBuilder()
             {
-                Title = $"Automod Case {infraction.Id} | {infraction.Type.Humanize()}",
+                Title = $"Automod Violation | {infraction.Type.Humanize()}",
                 Color = Color.Purple
             }
-            .AddField($"User", $"{infractioner.Mention}", true);
+            .AddField("Case Id", infraction.Id, true)
+            .AddField("User", infractioner.Mention, true);
 
             if (!string.IsNullOrEmpty(infraction.Trigger))
                 embed.AddField($"Trigger", infraction.Trigger, true);

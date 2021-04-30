@@ -5,6 +5,7 @@ namespace AdvancedBot.Core.Entities
 {
     public class AutoModInfraction
     {
+        public AutoModInfraction() { }
         public AutoModInfraction(uint id, ulong userId, AutoModInfractionType type, string trigger = "")
         {
             Id = id;

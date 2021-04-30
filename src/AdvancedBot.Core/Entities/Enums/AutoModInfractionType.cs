@@ -2,6 +2,6 @@ namespace AdvancedBot.Core.Entities.Enums
 {
     public enum AutoModInfractionType
     {
-        BannedWord = 0
+        BlacklistedWords = 0
     }
 }
