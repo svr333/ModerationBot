@@ -29,7 +29,7 @@ namespace AdvancedBot.Core
                 CaseSensitiveCommands = false,
                 LogLevel = LogSeverity.Info,
                 BotInviteIsPrivate = true,
-                RepositoryUrl = "https://github.com/svr333/AdvancedBot-Template"
+                RepositoryUrl = "https://github.com/Galaxy-Life-Reborn/GLRBot"
             });
         }
 
@@ -55,7 +55,7 @@ namespace AdvancedBot.Core
             => Console.WriteLine($"{msg.Source}: {msg.Message}");
 
         private async Task OnReadyAsync()
-            => await _client.SetGameAsync("Being a bot.");
+            => await _client.SetGameAsync("\u200b");
 
         private ServiceProvider ConfigureServices()
         {
