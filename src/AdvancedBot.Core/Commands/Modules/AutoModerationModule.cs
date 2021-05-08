@@ -175,19 +175,22 @@ namespace AdvancedBot.Core.Commands.Modules
             {
                 var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
 
-                await ReplyAsync($"Current limit is {guild.AutoMod.SpamSettings.MaxMessagesPerFiveSeconds} messages per five seconds.\nSet to 0 to disable.");
+                await ReplyAsync($"Current limit is **{guild.AutoMod.SpamSettings.MaxMessages}** messages per **{guild.AutoMod.SpamSettings.Seconds}** seconds.\nSet messages to 0 to disable.");
             }
 
             [Command("set")]
             [Summary("Sets the antispam limit.")]
-            public async Task SetAntiSpamAsync(uint messagesPerFiveSeconds)
+            public async Task SetAntiSpamAsync(uint messages, uint seconds)
             {
                 var guild = Accounts.GetOrCreateGuildAccount(Context.Guild.Id);
 
-                if (messagesPerFiveSeconds >= 10)
+                if (messages >= 10)
                     throw new Exception($"This number is bigger than Discord's built-in ratelimit.");
+                else if (seconds > 10)
+                    throw new Exception($"Cannot have more than 11 seconds of anti spam control.");
 
-                guild.AutoMod.SpamSettings.MaxMessagesPerFiveSeconds = (int) messagesPerFiveSeconds;
+                guild.AutoMod.SpamSettings.MaxMessages = (int) messages;
+                guild.AutoMod.SpamSettings.Seconds = (int) seconds;
 
                 Accounts.SaveGuildAccount(guild);
                 await ShowAntiSpamAsync();

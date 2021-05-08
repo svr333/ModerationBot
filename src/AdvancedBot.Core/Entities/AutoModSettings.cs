@@ -19,7 +19,8 @@ namespace AdvancedBot.Core.Entities
 
     public class SpamSettings
     {
-        public int MaxMessagesPerFiveSeconds { get; set; }
+        public int MaxMessages { get; set; }
+        public int Seconds { get; set; }
         public List<ulong> WhitelistedChannels { get; set; } = new List<ulong>();
         public List<ulong> WhitelistedRoles { get; set; } = new List<ulong>();
     }

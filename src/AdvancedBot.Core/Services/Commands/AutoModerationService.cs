@@ -15,6 +15,7 @@ namespace AdvancedBot.Core.Services.Commands
     {
         private DiscordSocketClient _client;
         private GuildAccountService _guilds;
+        private Dictionary<ulong, Queue<DateTimeOffset>> _recentMessages = new Dictionary<ulong, Queue<DateTimeOffset>>();
 
         public AutoModerationService(DiscordSocketClient client, GuildAccountService guilds)
         {
@@ -27,14 +28,21 @@ namespace AdvancedBot.Core.Services.Commands
             if (message.Author.IsBot)
                 return;
 
-            if (MessageContainsBlacklistedWords(guild.AutoMod, message.Content.ToLower(), out string trigger)
-            && !UserCanBypass(message.Author as IGuildUser, message.Channel.Id, guild.AutoMod.BlacklistedWordsSettings.WhitelistedRoles, guild.AutoMod.BlacklistedWordsSettings.WhitelistedChannels))
+            if (!UserCanBypass(message.Author as IGuildUser, message.Channel.Id, guild.AutoMod.BlacklistedWordsSettings.WhitelistedRoles, guild.AutoMod.BlacklistedWordsSettings.WhitelistedChannels)
+            && MessageContainsBlacklistedWords(guild.AutoMod, message.Content.ToLower(), out string trigger))
             {
                 await AddAutoModInfractionToGuild(guild, message.Author.Id, AutoModInfractionType.BlacklistedWords, trigger);
                 await message.DeleteAsync();
             }
-            else if (UserIsSpamming()
-            && !UserCanBypass(message.Author as IGuildUser, message.Channel.Id, guild.AutoMod.SpamSettings.WhitelistedRoles, guild.AutoMod.SpamSettings.WhitelistedChannels))
+            else if (!UserCanBypass(message.Author as IGuildUser, message.Channel.Id, guild.AutoMod.SpamSettings.WhitelistedRoles, guild.AutoMod.SpamSettings.WhitelistedChannels)
+            && UserIsSpamming(guild, message.Author.Id, message.Timestamp))
+            {
+                await AddAutoModInfractionToGuild(guild, message.Author.Id, AutoModInfractionType.Spam, $"<#{message.Channel.Id}>");
+                var messages = await message.Channel.GetMessagesAsync(10).FlattenAsync();
+                messages = messages.Where(x => x.Author.Id == message.Author.Id).Take(5);
+
+                await ((ITextChannel) message.Channel).DeleteMessagesAsync(messages);
+            }
 
             _guilds.SaveGuildAccount(guild);
         }
@@ -99,6 +107,39 @@ namespace AdvancedBot.Core.Services.Commands
             return false;
         }
     
+        private bool UserIsSpamming(GuildAccount guild, ulong userId, DateTimeOffset timestamp)
+        {
+            if (guild.AutoMod.SpamSettings.MaxMessages == 0)
+                return false;
+
+            if (_recentMessages.TryGetValue(userId, out Queue<DateTimeOffset> timeStamps))
+            {
+                if (timeStamps.Count < guild.AutoMod.SpamSettings.MaxMessages)
+                {
+                    timeStamps.Enqueue(timestamp);
+                    return false;
+                }
+                
+                if ((timeStamps.Last() - timeStamps.First()).TotalMilliseconds < guild.AutoMod.SpamSettings.Seconds * 1000)
+                {
+                    timeStamps.Clear();
+                    return true;
+                }
+
+                timeStamps.Dequeue();
+                timeStamps.Enqueue(timestamp);
+                return false;
+            }
+            else
+            {
+                var queue = new Queue<DateTimeOffset>(5);
+                queue.Enqueue(timestamp);
+
+                _recentMessages.Add(userId, queue);
+                return false;
+            }
+        }
+
         private bool UserCanBypass(IGuildUser user, ulong channelId, List<ulong> allowedRoles, List<ulong> allowedChannels)
         {
             if (allowedChannels.Contains(channelId))
