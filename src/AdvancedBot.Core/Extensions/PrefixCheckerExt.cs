@@ -6,8 +6,7 @@ namespace AdvancedBot.Core.Extensions
 {
     public static class PrefixCheckerExt
     {
-        public static bool HasPrefix(this SocketUserMessage message, DiscordSocketClient client, out int argPos,
-            List<string> prefixes)
+        public static bool HasPrefix(this SocketUserMessage message, DiscordSocketClient client, out int argPos, List<string> prefixes)
         {
             int prefixStart = 0;
             for (int i = 0; i < prefixes.Count; i++)
@@ -21,8 +20,7 @@ namespace AdvancedBot.Core.Extensions
             return message.HasMentionPrefix(client.CurrentUser, ref prefixStart);
         }
 
-        public static bool HasPrefix(this SocketUserMessage message, DiscordSocketClient client, out int argPos,
-            string prefix)
+        public static bool HasPrefix(this SocketUserMessage message, DiscordSocketClient client, out int argPos, string prefix)
         {
             int prefixStart = 0;
 

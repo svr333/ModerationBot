@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using AdvancedBot.Core.Extensions;
 using AdvancedBot.Core.Commands.Preconditions;
 using AdvancedBot.Core.Entities.Enums;
 using AdvancedBot.Core.Services.Commands;
@@ -9,6 +10,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
+using System.Linq;
 
 namespace AdvancedBot.Core.Commands.Modules
 {
@@ -340,7 +342,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("muterole")]
         [Summary("Shows you the currently active mute role.")]
-        public async Task GetMuteRole()
+        public async Task GetMuteRoleAsync()
         {
             var roleId = _moderation.GetMutedRoleId(Context.Guild.Id);
             if (roleId == 0)
@@ -361,7 +363,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("muterole")]
         [Summary("Sets the mute role to the provided role.")]
-        public async Task SetMuteRole(IRole role)
+        public async Task SetMuteRoleAsync(IRole role)
         {
             _moderation.CreateOrSetMutedRole(Context.Guild, role);
             await ReplyAsync($"Successfully set the muterole to {role.Mention}.");
@@ -370,7 +372,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("muterole create")]
         [Summary("Creates a new role to add as mute role.")]
         [RequireBotPermission(GuildPermission.ManageRoles)]
-        public async Task CreateAndSetMuteRole()
+        public async Task CreateAndSetMuteRoleAsync()
         {
             _moderation.CreateOrSetMutedRole(Context.Guild);
             var role = Context.Guild.GetRole(_moderation.GetMutedRoleId(Context.Guild.Id));
@@ -380,10 +382,31 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("modchannel")]
         [Summary("Set the modlogs channel.")]
-        public async Task SetModLogChannel(ITextChannel channel)
+        public async Task SetModLogChannelAsync(ITextChannel channel)
         {
             _moderation.SetModLogsChannel(Context.Guild.Id, channel);
             await ReplyAsync($"Set modlogs channel to {channel.Mention}.");
+        }
+
+        [Command("whois")]
+        [Summary("Shows info about the user.")]
+        public async Task GetUserInfoAsync(IUser user = null)
+        {
+            user = user ?? Context.User;
+            var gUser = (await (await Context.Client.Rest.GetGuildAsync(Context.Guild.Id)).GetUserAsync(user.Id));
+
+            var embed = new EmbedBuilder()
+            {
+                Title = $"Userinfo for {user.Username}",
+                ThumbnailUrl = user.GetAvatarUrl(),
+                Color = gUser.GetUserTopColour(Context.Client.Rest, Context.Guild.Id)
+            }
+            .AddField("User Info", $"▫️ **Username:** {user.Username}\n▫️ **Nickname:** {gUser.Nickname ?? "\\"}\n▫️**Avatar:** [png]({user.GetAvatarUrl(ImageFormat.Png)}) [jpg]({user.GetAvatarUrl(ImageFormat.Jpeg)}) [gif]({user.GetAvatarUrl(ImageFormat.Gif)}) [webp]({user.GetAvatarUrl(ImageFormat.WebP)})\n\u200b")
+            .AddField("Important Dates", $"▫️ **Account Creation:** {user.CreatedAt.UtcDateTime.ToLongDateString()} {user.CreatedAt.UtcDateTime.ToLongTimeString()}\n▫️ **Join Date:** {gUser.JoinedAt.Value.UtcDateTime.ToLongDateString()} {gUser.JoinedAt.Value.UtcDateTime.ToLongTimeString()}\n\u200b")
+            .AddField("Roles", string.Join(" ", gUser.RoleIds.Select(x => $"<@&{x}>")))
+            .WithFooter($"Requested by {user.Username} ({user.Id})", user.GetAvatarUrl());
+
+            await ReplyAsync($"", false, embed.Build());
         }
 
         private TimeSpan ParseTimeSpanFromString(ref string input)
