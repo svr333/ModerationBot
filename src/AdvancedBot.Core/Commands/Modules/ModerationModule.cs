@@ -401,10 +401,10 @@ namespace AdvancedBot.Core.Commands.Modules
                 ThumbnailUrl = user.GetAvatarUrl(),
                 Color = gUser.GetUserTopColour(Context.Client.Rest, Context.Guild.Id)
             }
-            .AddField("User Info", $"▫️ **Username:** {user.Username}\n▫️ **Nickname:** {gUser.Nickname ?? "\\"}\n▫️**Avatar:** [png]({user.GetAvatarUrl(ImageFormat.Png)}) [jpg]({user.GetAvatarUrl(ImageFormat.Jpeg)}) [gif]({user.GetAvatarUrl(ImageFormat.Gif)}) [webp]({user.GetAvatarUrl(ImageFormat.WebP)})\n\u200b")
-            .AddField("Important Dates", $"▫️ **Account Creation:** {user.CreatedAt.UtcDateTime.ToLongDateString()} {user.CreatedAt.UtcDateTime.ToLongTimeString()}\n▫️ **Join Date:** {gUser.JoinedAt.Value.UtcDateTime.ToLongDateString()} {gUser.JoinedAt.Value.UtcDateTime.ToLongTimeString()}\n\u200b")
-            .AddField("Roles", string.Join(" ", gUser.RoleIds.Select(x => $"<@&{x}>")))
-            .WithFooter($"Requested by {user.Username} ({user.Id})", user.GetAvatarUrl());
+            .AddField("📋 User Info", $"▫**Id:** {user.Id}\n▫**Username:** {user.Username}#{user.DiscriminatorValue} ({user.Mention})\n▫️**Nickname:** {gUser.Nickname ?? "\\"}\n▫️**Avatar:** [png]({user.GetAvatarUrl(ImageFormat.Png)}) | [jpg]({user.GetAvatarUrl(ImageFormat.Jpeg)}) | [gif]({user.GetAvatarUrl(ImageFormat.Gif)}) | [webp]({user.GetAvatarUrl(ImageFormat.WebP)})\n\u200b")
+            .AddField("🕧 Important Dates", $"▫️**Created:** {user.CreatedAt.UtcDateTime.ToLongDateString()} {user.CreatedAt.UtcDateTime.ToLongTimeString()}\n▫️**Joined:** {gUser.JoinedAt.Value.UtcDateTime.ToLongDateString()} {gUser.JoinedAt.Value.UtcDateTime.ToLongTimeString()}\n\u200b")
+            .AddField("Roles", string.Join(" ", gUser.RoleIds.Select(x => $"<@&{x}>").Skip(1)))
+            .WithFooter($"Requested by {Context.User.Username} ({Context.User.Id})", Context.User.GetAvatarUrl());
 
             await ReplyAsync($"", false, embed.Build());
         }
