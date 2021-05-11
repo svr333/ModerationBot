@@ -27,6 +27,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("moderations")]
         [Alias("infractions", "mutes", "bans")]
         [Summary("Shows all on-going timed infractions (mutes/bans)")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task ShowCurrentInfractionsAsync()
         {
             var timedInf = _moderation.GetCurrentTimedInfractions(Context.Guild.Id);
@@ -66,6 +67,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("case")]
         [Summary("Shows information about that mod case.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task GetCaseAsync(uint id)
         {
             var infraction = _moderation.GetInfraction(Context.Guild.Id, id);
@@ -92,6 +94,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("modlogs")]
         [Summary("Shows the modlogs related to the person.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task GetModLogsForUserAsync(IGuildUser user)
         {
             var infractions = _moderation.GetAllUserInfractions(Context.Guild.Id, user.Id);
@@ -120,6 +123,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("reason")]
         [Summary("Change the reason of an existing case.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task ChangeReasonAsync(uint caseId, [Remainder] string newReason)
         {
             var oldReason = _moderation.ChangeInfractionReason(Context.Guild.Id, caseId, newReason);
@@ -136,6 +140,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("duration")]
         [Summary("Change the duration of an existing case.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task ChangeDurationAsync(uint caseId, [Remainder] string rawNewTime)
         {
             var newTime = ParseTimeSpanFromString(ref rawNewTime);
@@ -153,6 +158,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("warn")]
         [Summary("Warns a user.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task WarnUserAsync([EnsureNotSelf] IUser user, [Remainder] string reason)
         {
             var warning = _moderation.WarnUserInGuild(user, (SocketGuildUser)Context.User, reason);
@@ -178,6 +184,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("delwarn")]
         [Summary("Deletes an existing warning by case id.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task RemoveWarnAsync(uint caseId)
         {
             var warning = _moderation.RemoveWarningFromGuild(Context.Guild.Id, Context.User.Id, caseId);
@@ -205,6 +212,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("clearwarn")]
         [Summary("Clears all warns related to a certain user.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task RemoveAllUserWarns(IGuildUser user)
         {
             _moderation.ClearAllInfractionsForUser(user, Context.User.Id);
@@ -214,6 +222,8 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("kick")]
         [Summary("Kicks a user.")]
         [RequireBotPermission(GuildPermission.KickMembers)]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
+
         public async Task KickUserAsync([EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             try
@@ -240,6 +250,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Alias("tempban")]
         [Summary("Bans a user.")]
         [RequireBotPermission(GuildPermission.BanMembers)]
+        [RequireCustomPermission(GuildPermission.BanMembers)]
         public async Task BanUserAsync([EnsureNotSelf] IUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
@@ -277,6 +288,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("unban")]
         [Summary("Unbans a user.")]
         [RequireBotPermission(GuildPermission.BanMembers)]
+        [RequireCustomPermission(GuildPermission.BanMembers)]
         public async Task UnbanUserAsync(IUser user)
         {
             var infraction = _moderation.UnbanUserFromGuild(Context.User.Id, user.Id, Context.Guild.Id);
@@ -286,6 +298,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("mute")]
         [Summary("Mutes a user.")]
         [RequireBotPermission(GuildPermission.ManageRoles)]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task MuteUserAsync([EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
@@ -318,6 +331,8 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("unmute")]
         [Summary("Unmutes a user.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
+
         public async Task UnmuteUserAsync([EnsureNotSelf] SocketGuildUser user)
         {
             var infraction = _moderation.UnmuteUser(user, Context.User.Id);
@@ -342,6 +357,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("muterole")]
         [Summary("Shows you the currently active mute role.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task GetMuteRoleAsync()
         {
             var roleId = _moderation.GetMutedRoleId(Context.Guild.Id);
@@ -363,6 +379,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("muterole")]
         [Summary("Sets the mute role to the provided role.")]
+        [RequireCustomPermission(GuildPermission.ManageGuild)]
         public async Task SetMuteRoleAsync(IRole role)
         {
             _moderation.CreateOrSetMutedRole(Context.Guild, role);
@@ -372,6 +389,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("muterole create")]
         [Summary("Creates a new role to add as mute role.")]
         [RequireBotPermission(GuildPermission.ManageRoles)]
+        [RequireCustomPermission(GuildPermission.ManageGuild)]
         public async Task CreateAndSetMuteRoleAsync()
         {
             _moderation.CreateOrSetMutedRole(Context.Guild);
@@ -382,6 +400,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
         [Command("modchannel")]
         [Summary("Set the modlogs channel.")]
+        [RequireCustomPermission(GuildPermission.ManageGuild)]
         public async Task SetModLogChannelAsync(ITextChannel channel)
         {
             _moderation.SetModLogsChannel(Context.Guild.Id, channel);

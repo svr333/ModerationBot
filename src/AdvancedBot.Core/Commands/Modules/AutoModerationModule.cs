@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using AdvancedBot.Core.Commands.Preconditions;
 using Discord;
 using Discord.Commands;
 
@@ -8,6 +9,7 @@ namespace AdvancedBot.Core.Commands.Modules
     [Group("automoderation")]
     [Alias("am")]
     [Summary("Category to manage the automoderation system in your server.")]
+    [RequireCustomPermission(GuildPermission.ManageGuild)]
     public class AutoModerationModule : TopModule
     {
         [Command("")]
