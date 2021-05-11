@@ -42,7 +42,7 @@ namespace AdvancedBot.Core
             _client.Log += LogAsync;
             _commands.Log += LogAsync;
 
-            var token = "NTU4OTU5OTMwOTYzNTI1NjMz.XJYKAA.boD15BFZT0zbEuAumxV3s42KGNM";
+            var token = Environment.GetEnvironmentVariable("ModToken");
 
             await Task.Delay(10).ContinueWith(t => _client.LoginAsync(TokenType.Bot, token));
             await _client.StartAsync();
