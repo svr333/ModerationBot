@@ -159,7 +159,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("warn")]
         [Summary("Warns a user.")]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-        public async Task WarnUserAsync([EnsureNotSelf] IUser user, [Remainder] string reason)
+        public async Task WarnUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IUser user, [Remainder] string reason)
         {
             var warning = _moderation.WarnUserInGuild(user, (SocketGuildUser)Context.User, reason);
             
@@ -224,7 +224,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [RequireBotPermission(GuildPermission.KickMembers)]
         [RequireCustomPermission(GuildPermission.KickMembers)]
 
-        public async Task KickUserAsync([EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task KickUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             try
             {
@@ -251,7 +251,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Summary("Bans a user.")]
         [RequireBotPermission(GuildPermission.BanMembers)]
         [RequireCustomPermission(GuildPermission.BanMembers)]
-        public async Task BanUserAsync([EnsureNotSelf] IUser user, [Remainder] string reason = "No reason provided.")
+        public async Task BanUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
             if (string.IsNullOrEmpty(reason)) reason = "No reason provided.";
@@ -299,7 +299,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Summary("Mutes a user.")]
         [RequireBotPermission(GuildPermission.ManageRoles)]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-        public async Task MuteUserAsync([EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task MuteUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
             if (string.IsNullOrEmpty(reason)) reason = "No reason provided.";
@@ -333,7 +333,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Summary("Unmutes a user.")]
         [RequireCustomPermission(GuildPermission.KickMembers)]
 
-        public async Task UnmuteUserAsync([EnsureNotSelf] SocketGuildUser user)
+        public async Task UnmuteUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] SocketGuildUser user)
         {
             var infraction = _moderation.UnmuteUser(user, Context.User.Id);
 
