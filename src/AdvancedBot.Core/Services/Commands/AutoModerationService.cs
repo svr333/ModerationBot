@@ -15,12 +15,14 @@ namespace AdvancedBot.Core.Services.Commands
     {
         private DiscordSocketClient _client;
         private GuildAccountService _guilds;
+        private ModerationService _moderation;
         private Dictionary<ulong, Queue<DateTimeOffset>> _recentMessages = new Dictionary<ulong, Queue<DateTimeOffset>>();
 
-        public AutoModerationService(DiscordSocketClient client, GuildAccountService guilds)
+        public AutoModerationService(DiscordSocketClient client, GuildAccountService guilds, ModerationService moderation)
         {
             _client = client;
             _guilds = guilds;
+            _moderation = moderation;
         }
 
         public async Task HandleMessageReceivedChecksAsync(GuildAccount guild, IMessage message)
@@ -42,6 +44,17 @@ namespace AdvancedBot.Core.Services.Commands
                 messages = messages.Where(x => x.Author.Id == message.Author.Id).Take(5);
 
                 await ((ITextChannel) message.Channel).DeleteMessagesAsync(messages);
+
+                var violations = guild.AutoModInfractions.Count(x => x.InfractionerId == message.Author.Id && x.Type == AutoModInfractionType.Spam);
+                if (violations >= 3)
+                {
+                    _moderation.MuteUser(message.Author as IGuildUser, _client.CurrentUser.Id, new TimeSpan(1, 0, 0), $"Spam Automod violation #{violations}");
+                }
+            }
+            else if (message.MentionedUserIds.Count >= 5)
+            {
+                await AddAutoModInfractionToGuild(guild, message.Author.Id, AutoModInfractionType.MassMention, $"<#{message.Channel.Id}>");
+                _moderation.MuteUser(message.Author as IGuildUser, _client.CurrentUser.Id, new TimeSpan(1, 30, 0), "Mass mention Automod violation.");
             }
 
             _guilds.SaveGuildAccount(guild);
