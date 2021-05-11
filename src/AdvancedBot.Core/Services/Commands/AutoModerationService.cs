@@ -49,12 +49,14 @@ namespace AdvancedBot.Core.Services.Commands
                 if (violations >= 3)
                 {
                     _moderation.MuteUser(message.Author as IGuildUser, _client.CurrentUser.Id, new TimeSpan(1, 0, 0), $"Spam Automod violation #{violations}");
+                    return;
                 }
             }
             else if (message.MentionedUserIds.Count >= 5)
             {
                 await AddAutoModInfractionToGuild(guild, message.Author.Id, AutoModInfractionType.MassMention, $"<#{message.Channel.Id}>");
                 _moderation.MuteUser(message.Author as IGuildUser, _client.CurrentUser.Id, new TimeSpan(1, 30, 0), "Mass mention Automod violation.");
+                return;
             }
 
             _guilds.SaveGuildAccount(guild);
