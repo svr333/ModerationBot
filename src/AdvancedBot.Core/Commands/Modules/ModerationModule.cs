@@ -294,9 +294,9 @@ namespace AdvancedBot.Core.Commands.Modules
         [Summary("Unbans a user.")]
         [RequireBotPermission(GuildPermission.BanMembers)]
         [RequireCustomPermission(GuildPermission.BanMembers)]
-        public async Task UnbanUserAsync(IUser user)
+        public async Task UnbanUserAsync(IUser user, [Remainder] string reason = "No reason provided.")
         {
-            var infraction = _moderation.UnbanUserFromGuild(Context.User.Id, user.Id, Context.Guild.Id);
+            var infraction = _moderation.UnbanUserFromGuild(Context.User.Id, user.Id, Context.Guild.Id, reason);
             await ReplyAsync($"#{infraction.Id} | Unbanned {user.Mention}.");
         }
 
@@ -337,10 +337,9 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("unmute")]
         [Summary("Unmutes a user.")]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-
-        public async Task UnmuteUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] SocketGuildUser user)
+        public async Task UnmuteUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
         {
-            var infraction = _moderation.UnmuteUser(user, Context.User.Id);
+            var infraction = _moderation.UnmuteUser(user, Context.User.Id, reason);
 
             try
             {

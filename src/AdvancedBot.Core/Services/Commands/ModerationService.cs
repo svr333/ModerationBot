@@ -53,10 +53,10 @@ namespace AdvancedBot.Core.Services.Commands
                     {
                         case InfractionType.Mute:
                             var user = guilds[i].GetUser(guild.TimedInfractions[j].InfractionerId);
-                            UnmuteUser(user, _client.CurrentUser.Id);
+                            UnmuteUser(user, _client.CurrentUser.Id, "Automatic unmute.");
                             break;
                         case InfractionType.Ban:
-                            UnbanUserFromGuild(_client.CurrentUser.Id, guild.TimedInfractions[j].InfractionerId, guilds[i].Id);
+                            UnbanUserFromGuild(_client.CurrentUser.Id, guild.TimedInfractions[j].InfractionerId, guilds[i].Id, "Automatic unban.");
                             break;
                         default:
                             break;
@@ -166,11 +166,11 @@ namespace AdvancedBot.Core.Services.Commands
             return infraction;
         }
 
-        public Infraction UnbanUserFromGuild(ulong modId, ulong infractionerId, ulong guildId)
+        public Infraction UnbanUserFromGuild(ulong modId, ulong infractionerId, ulong guildId, string reason)
         {
             var user = _client.Rest.GetUserAsync(infractionerId).GetAwaiter().GetResult();
             var guild = _guilds.GetOrCreateGuildAccount(guildId);
-            var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Unban, null, "", guild);
+            var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Unban, null, reason, guild);
 
             try
             {
@@ -208,11 +208,11 @@ namespace AdvancedBot.Core.Services.Commands
             return infraction;
         }
 
-        public Infraction UnmuteUser(IGuildUser user, ulong modId)
+        public Infraction UnmuteUser(IGuildUser user, ulong modId, string reason)
         {
             var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
 
-            var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Unmute, null, "", guild);
+            var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Unmute, null, reason, guild);
             user.RemoveRoleAsync(user.Guild.GetRole(guild.MutedRoleId));
             
             var inf = guild.TimedInfractions.Find(x => x.InfractionerId == user.Id && x.Type == InfractionType.Mute);
