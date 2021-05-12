@@ -44,7 +44,7 @@ namespace AdvancedBot.Core.Services.Commands
 
                 for (int j = 0; j < guild.TimedInfractions.ToArray().Length; j++)
                 {
-                    if (guild.TimedInfractions[j].FinishesAt > DateTime.Now)
+                    if (guild.TimedInfractions[j].FinishesAt > DateTime.UtcNow)
                         continue;
 
                     infractionsToRemove.Add(guild.TimedInfractions[j]);

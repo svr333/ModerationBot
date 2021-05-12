@@ -87,7 +87,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
             if (infraction.FinishesAt != null)
             {
-                embed.AddField($"Ends At", $"{infraction.FinishesAt.Humanize()}", true);
+                embed.AddField($"Ends At", $"{(DateTime.UtcNow - infraction.FinishesAt.Value).Humanize(3, minUnit: TimeUnit.Second)}", true);
             }
 
             await ReplyAsync($"", false, embed.Build());
