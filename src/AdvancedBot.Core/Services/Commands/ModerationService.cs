@@ -63,6 +63,8 @@ namespace AdvancedBot.Core.Services.Commands
                     }
                 }
 
+                guild = _guilds.GetOrCreateGuildAccount(guild.Id);
+
                 for (int j = 0; j < infractionsToRemove.Count; j++)
                 {
                     guild.TimedInfractions.Remove(infractionsToRemove[j]);
