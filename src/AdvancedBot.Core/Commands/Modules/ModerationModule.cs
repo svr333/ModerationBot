@@ -413,6 +413,7 @@ namespace AdvancedBot.Core.Commands.Modules
         {
             user = user ?? Context.User;
             var gUser = (await (await Context.Client.Rest.GetGuildAsync(Context.Guild.Id)).GetUserAsync(user.Id));
+            var nickNameText = string.IsNullOrEmpty(gUser.Nickname) ? "" : $"▫️**Nickname:** {gUser.Nickname}\n";
 
             var embed = new EmbedBuilder()
             {
@@ -420,7 +421,7 @@ namespace AdvancedBot.Core.Commands.Modules
                 ThumbnailUrl = user.GetAvatarUrl(),
                 Color = gUser.GetUserTopColour(Context.Client.Rest, Context.Guild.Id)
             }
-            .AddField("📋 User Info", $"▫**Id:** {user.Id}\n▫**Username:** {user.Username}#{user.DiscriminatorValue} ({user.Mention})\n▫️**Nickname:** {gUser.Nickname ?? "\\"}\n▫️**Avatar:** [png]({user.GetAvatarUrl(ImageFormat.Png)}) | [jpg]({user.GetAvatarUrl(ImageFormat.Jpeg)}) | [gif]({user.GetAvatarUrl(ImageFormat.Gif)}) | [webp]({user.GetAvatarUrl(ImageFormat.WebP)})\n\u200b")
+            .AddField("📋 User Info", $"▫**Id:** {user.Id} ({user.Mention})\n▫**Username:** {user.Username}#{user.DiscriminatorValue}\n{nickNameText}▫️**Avatar:** [png]({user.GetAvatarUrl(ImageFormat.Png)}) | [jpg]({user.GetAvatarUrl(ImageFormat.Jpeg)}) | [gif]({user.GetAvatarUrl(ImageFormat.Gif)}) | [webp]({user.GetAvatarUrl(ImageFormat.WebP)})\n\u200b")
             .AddField("🕧 Important Dates", $"▫️**Created:** {user.CreatedAt.UtcDateTime.ToLongDateString()} {user.CreatedAt.UtcDateTime.ToLongTimeString()}\n▫️**Joined:** {gUser.JoinedAt.Value.UtcDateTime.ToLongDateString()} {gUser.JoinedAt.Value.UtcDateTime.ToLongTimeString()}\n\u200b")
             .AddField("Roles", string.Join(" ", gUser.RoleIds.Select(x => $"<@&{x}>").Skip(1)))
             .WithFooter($"Requested by {Context.User.Username} ({Context.User.Id})", Context.User.GetAvatarUrl());
