@@ -11,6 +11,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Humanizer;
 using System.Linq;
+using Humanizer.Localisation;
 
 namespace AdvancedBot.Core.Commands.Modules
 {
@@ -259,14 +260,18 @@ namespace AdvancedBot.Core.Commands.Modules
             try
             {
                 var dmChannel = await user.GetOrCreateDMChannelAsync();
-                await dmChannel.SendMessageAsync("", false, new EmbedBuilder()
+
+                var embed = new EmbedBuilder()
                 {
                     Title = $"You were banned from **{Context.Guild.Name}**",
                     Color = _moderation.GetColorFromInfractionType(InfractionType.Ban)
                 }
-                .AddField($"Duration", time.Humanize(), true)
-                .AddField($"Reason", reason, true)
-                .Build());
+                .AddField($"Reason", reason, true);
+
+                if (time.TotalMilliseconds > 1000)
+                    embed.AddField("Duration", time.Humanize(3, minUnit: TimeUnit.Second));
+
+                await dmChannel.SendMessageAsync("", false, embed.Build());
             }
             catch (Exception)
             {
