@@ -21,6 +21,7 @@ namespace AdvancedBot.Core.Entities
         public List<AutoModInfraction> AutoModInfractions { get; set; } = new List<AutoModInfraction>();
         public List<Infraction> Infractions { get; set; } = new List<Infraction>();
         public List<Infraction> TimedInfractions { get; set; } = new List<Infraction>();
+        public string DefaultDisplayPrefix => string.IsNullOrEmpty(Prefixes[0]) ? "!" : Prefixes[0];
 
         #endregion
 
