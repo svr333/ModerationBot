@@ -96,7 +96,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("modlogs")]
         [Summary("Shows the modlogs related to the person.")]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-        public async Task GetModLogsForUserAsync(IGuildUser user)
+        public async Task GetModLogsForUserAsync(IUser user)
         {
             var infractions = _moderation.GetAllUserInfractions(Context.Guild.Id, user.Id);
             var fields = new List<EmbedField>();
@@ -115,6 +115,36 @@ namespace AdvancedBot.Core.Commands.Modules
                 {
                     Name = $"Case #{infractions[i].Id} | {infractions[i].Type.Humanize()} by {mod.Username}",
                     Value = $"{infractions[i].Reason} | {infractions[i].Date.ToShortDateString()}\n\u200b"
+                }
+                .Build());
+            }
+
+            await SendPaginatedMessageAsync(fields, null, embed);
+        }
+
+        [Command("warnings")]
+        [Summary("Shows all warnings for that user.")]
+        [RequireCustomPermission(GuildPermission.KickMembers)]
+        public async Task GetWarningsForUserAsync(IUser user)
+        {
+            var warnings = _moderation.GetAllUserInfractions(Context.Guild.Id, user.Id);
+
+            var embed = new EmbedBuilder()
+            {
+                Title = $"{user.Username}'s warnings",
+                Color = Color.DarkBlue
+            };
+
+            var fields = new List<EmbedField>();
+
+            for (int i = 0; i < warnings.Length; i++)
+            {
+                var mod = Context.Client.GetUser(warnings[i].ModeratorId);
+
+                fields.Add(new EmbedFieldBuilder()
+                {
+                    Name = $"Case #{warnings[i].Id} | {warnings[i].Type.Humanize()} by {mod.Username}",
+                    Value = $"{warnings[i].Reason} | {warnings[i].Date.ToShortDateString()}\n\u200b"
                 }
                 .Build());
             }
