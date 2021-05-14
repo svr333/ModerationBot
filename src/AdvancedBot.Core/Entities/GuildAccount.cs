@@ -119,6 +119,12 @@ namespace AdvancedBot.Core.Entities
             command.IsEnabled = false;
         }
 
+        public void ToggleDeleteMsgOnCommand(string name)
+        {
+            var command = Commands.Find(x => x.Name == name);
+            command.DeleteOriginalMessage = !command.DeleteOriginalMessage;
+        }
+
         #endregion
 
         #region Moderation
@@ -180,5 +186,8 @@ namespace AdvancedBot.Core.Entities
         }
 
         #endregion
+
+        public void SetModRole(ulong id)
+            => ModRoleId = id;
     }
 }
