@@ -48,8 +48,8 @@ namespace AdvancedBot.Core.Commands.Modules
 
             for (int i = 0; i < timedInf.Length; i++)
             {
-                var mod = Context.Client.GetUser(timedInf[i].ModeratorId);
-                var infractioner = Context.Client.GetUser(timedInf[i].InfractionerId);
+                var mod = await Context.Client.Rest.GetUserAsync(timedInf[i].ModeratorId);
+                var infractioner = await Context.Client.Rest.GetUserAsync(timedInf[i].InfractionerId);
                 var infractionerName = $"{timedInf[i].InfractionerId}";
 
                 if (infractioner != null)
@@ -58,7 +58,7 @@ namespace AdvancedBot.Core.Commands.Modules
                 fields.Add(new EmbedFieldBuilder() 
                 {
                     Name =$"Case {timedInf[i].Id} | {timedInf[i].Type} for {infractionerName}",
-                    Value = $"{timedInf[i].Reason}"
+                    Value = $"{(DateTime.UtcNow - timedInf[i].FinishesAt.Value).Humanize(3, minUnit: TimeUnit.Second)} left.\n{timedInf[i].Reason}"
                 }
                 .Build());
             }
