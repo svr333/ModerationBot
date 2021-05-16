@@ -49,7 +49,7 @@ namespace AdvancedBot.Core.Services.Commands
                 if (violations >= 3)
                 {
                     _guilds.SaveGuildAccount(guild);
-                    _moderation.MuteUser(message.Author as IGuildUser, _client.CurrentUser.Id, new TimeSpan(1, 0, 0), $"Spam Automod violation #{violations}");
+                    _moderation.MuteUser(message.Author as IGuildUser, _client.CurrentUser.Id, new TimeSpan(0, 1, 0, 0, 0), $"Spam Automod violation #{violations}");
                     return;
                 }
             }
@@ -57,7 +57,7 @@ namespace AdvancedBot.Core.Services.Commands
             {
                 await AddAutoModInfractionToGuild(guild, message.Author.Id, AutoModInfractionType.MassMention, $"<#{message.Channel.Id}>");
                 _guilds.SaveGuildAccount(guild);
-                _moderation.MuteUser(message.Author as IGuildUser, _client.CurrentUser.Id, new TimeSpan(1, 30, 0), "Mass mention Automod violation.");
+                _moderation.MuteUser(message.Author as IGuildUser, _client.CurrentUser.Id, new TimeSpan(0, 1, 30, 0, 0), "Mass mention Automod violation.");
                 return;
             }
 
