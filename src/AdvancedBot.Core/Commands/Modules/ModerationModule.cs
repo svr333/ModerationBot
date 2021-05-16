@@ -72,7 +72,7 @@ namespace AdvancedBot.Core.Commands.Modules
         public async Task GetCaseAsync(uint id)
         {
             var infraction = _moderation.GetInfraction(Context.Guild.Id, id);
-            var infractioner = Context.Client.GetUser(infraction.InfractionerId);
+            var infractioner = await Context.Client.Rest.GetUserAsync(infraction.InfractionerId);
             var moderator = await Context.Client.Rest.GetUserAsync(infraction.ModeratorId);
 
             var embed = new EmbedBuilder()
