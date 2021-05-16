@@ -7,6 +7,7 @@ using AdvancedBot.Core.Entities;
 using AdvancedBot.Core.Entities.Enums;
 using AdvancedBot.Core.Services.DataStorage;
 using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using Humanizer;
 using Humanizer.Localisation;
@@ -191,9 +192,9 @@ namespace AdvancedBot.Core.Services.Commands
 
         public Infraction MuteUser(IGuildUser user, ulong modId, TimeSpan time, string reason)
         {
-            var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
+            var guild = _guilds.GetOrCreateGuildAccount(user.GuildId);
 
-            var mutedRole = user.Guild.GetRole(guild.MutedRoleId);
+            var mutedRole = _client.GetGuild(user.GuildId).GetRole(guild.MutedRoleId);
             var endsAt = DateTime.UtcNow.Add(time);
 
             var inf = guild.TimedInfractions.Find(x => x.InfractionerId == user.Id && x.Type == InfractionType.Mute);
@@ -210,10 +211,10 @@ namespace AdvancedBot.Core.Services.Commands
 
         public Infraction UnmuteUser(IGuildUser user, ulong modId, string reason)
         {
-            var guild = _guilds.GetOrCreateGuildAccount(user.Guild.Id);
+            var guild = _guilds.GetOrCreateGuildAccount(user.GuildId);
 
             var infraction = AddInfractionToGuild(user.Id, modId, InfractionType.Unmute, null, reason, guild);
-            user.RemoveRoleAsync(user.Guild.GetRole(guild.MutedRoleId));
+            user.RemoveRoleAsync(_client.GetGuild(user.GuildId).GetRole(guild.MutedRoleId));
             
             var inf = guild.TimedInfractions.Find(x => x.InfractionerId == user.Id && x.Type == InfractionType.Mute);
             if (inf != null)
@@ -237,9 +238,9 @@ namespace AdvancedBot.Core.Services.Commands
             _guilds.SaveGuildAccount(gld);
         }
 
-        public void ClearAllInfractionsForUser(IGuildUser user, ulong modId)
+        public void ClearAllInfractionsForUser(IUser user, ulong guildId, ulong modId)
         {
-            var guild = _guilds.GetOrCreateGuildAccount(user.GuildId);
+            var guild = _guilds.GetOrCreateGuildAccount(guildId);
             var warns = guild.Infractions.Where(x => x.InfractionerId == user.Id && x.Type == InfractionType.Warning).ToArray();
 
             for (int i = 0; i < warns.Length; i++)

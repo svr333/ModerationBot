@@ -73,7 +73,7 @@ namespace AdvancedBot.Core.Commands.Modules
         {
             var infraction = _moderation.GetInfraction(Context.Guild.Id, id);
             var infractioner = Context.Client.GetUser(infraction.InfractionerId);
-            var moderator = Context.Client.GetUser(infraction.ModeratorId);
+            var moderator = await Context.Client.Rest.GetUserAsync(infraction.ModeratorId);
 
             var embed = new EmbedBuilder()
             {
@@ -244,9 +244,9 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("clearwarn")]
         [Summary("Clears all warns related to a certain user.")]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-        public async Task RemoveAllUserWarns(IGuildUser user)
+        public async Task RemoveAllUserWarns(IUser user)
         {
-            _moderation.ClearAllInfractionsForUser(user, Context.User.Id);
+            _moderation.ClearAllInfractionsForUser(user, Context.Guild.Id, Context.User.Id);
             await ReplyAsync($"Cleared all warns for {user.Mention}.");
         }
 
@@ -255,7 +255,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [RequireBotPermission(GuildPermission.KickMembers)]
         [RequireCustomPermission(GuildPermission.KickMembers)]
 
-        public async Task KickUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task KickUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IUser user, [Remainder] string reason = "No reason provided.")
         {
             try
             {
@@ -273,7 +273,8 @@ namespace AdvancedBot.Core.Commands.Modules
                 await ReplyAsync($"Could not dm user to notify him.");
             }
 
-            var infraction = await _moderation.KickUserFromGuildAsync(user, Context.User.Id, reason);
+            var restUser = await (await Context.Client.Rest.GetGuildAsync(Context.Guild.Id)).GetUserAsync(user.Id);
+            var infraction = await _moderation.KickUserFromGuildAsync(restUser, Context.User.Id, reason);
             await ReplyAsync($"#{infraction.Id} | Kicked {user.Mention}.");
         }
 
@@ -334,7 +335,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [Summary("Mutes a user.")]
         [RequireBotPermission(GuildPermission.ManageRoles)]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-        public async Task MuteUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task MuteUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IUser user, [Remainder] string reason = "No reason provided.")
         {
             var time = ParseTimeSpanFromString(ref reason);
             if (string.IsNullOrEmpty(reason)) reason = "No reason provided.";
@@ -342,7 +343,8 @@ namespace AdvancedBot.Core.Commands.Modules
             if (time.TotalMilliseconds <= 1000)
                 time = new TimeSpan(14, 0, 0, 0);
 
-            var infraction = _moderation.MuteUser(user, Context.User.Id, time, reason);
+            var restUser = await (await Context.Client.Rest.GetGuildAsync(Context.Guild.Id)).GetUserAsync(user.Id);
+            var infraction = _moderation.MuteUser(restUser, Context.User.Id, time, reason);
 
             try
             {
@@ -367,9 +369,10 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("unmute")]
         [Summary("Unmutes a user.")]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-        public async Task UnmuteUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] SocketGuildUser user, [Remainder] string reason = "No reason provided.")
+        public async Task UnmuteUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IUser user, [Remainder] string reason = "No reason provided.")
         {
-            var infraction = _moderation.UnmuteUser(user, Context.User.Id, reason);
+            var restUser = await (await Context.Client.Rest.GetGuildAsync(Context.Guild.Id)).GetUserAsync(user.Id);
+            var infraction = _moderation.UnmuteUser(restUser, Context.User.Id, reason);
 
             try
             {
