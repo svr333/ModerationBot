@@ -127,7 +127,7 @@ namespace AdvancedBot.Core.Commands.Modules
         [RequireCustomPermission(GuildPermission.KickMembers)]
         public async Task GetWarningsForUserAsync(IUser user)
         {
-            var warnings = _moderation.GetAllUserInfractions(Context.Guild.Id, user.Id);
+            var warnings = _moderation.GetAllUserInfractions(Context.Guild.Id, user.Id).Where(x => x.Type == InfractionType.Warning).ToArray();
 
             var embed = new EmbedBuilder()
             {
