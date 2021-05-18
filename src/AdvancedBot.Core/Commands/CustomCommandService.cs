@@ -79,14 +79,16 @@ namespace AdvancedBot.Core.Commands
                 $"{currentModule.Summary}\n\n";
             }
 
+            if (!string.IsNullOrEmpty(submodulesField)) embed.AddField($"Subcategories:", $"{submodulesField}");
+
             for (int i = 0; i < module.Commands.Count; i++)
             {
                 var currentCommand = module.Commands[i];
 
-                commandsField += $"**{GenerateCommandUsage(currentCommand, prefix)}**\n{currentCommand.Summary}\n\n";
+                embed.AddField($"{GenerateCommandUsage(currentCommand, prefix)}", $"{currentCommand.Summary}");
+                //commandsField += $"**{GenerateCommandUsage(currentCommand, prefix)}**\n{currentCommand.Summary}\n\n";
             }
 
-            if (!string.IsNullOrEmpty(submodulesField)) embed.AddField($"Subcategories:", $"{submodulesField}");
             if (!string.IsNullOrEmpty(commandsField)) embed.AddField($"Commands:", commandsField);
 
             return embed;

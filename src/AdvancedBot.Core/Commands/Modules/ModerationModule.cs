@@ -254,7 +254,6 @@ namespace AdvancedBot.Core.Commands.Modules
         [Summary("Kicks a user.")]
         [RequireBotPermission(GuildPermission.KickMembers)]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-
         public async Task KickUserAsync([RequireHigherHierarchyPrecondition][EnsureNotSelf] IUser user, [Remainder] string reason = "No reason provided.")
         {
             try

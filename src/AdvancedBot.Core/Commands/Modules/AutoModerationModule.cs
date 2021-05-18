@@ -7,7 +7,7 @@ using Discord.Commands;
 namespace AdvancedBot.Core.Commands.Modules
 {
     [Group("automoderation")]
-    [Alias("am")]
+    [Alias("automod", "am")]
     [Summary("Category to manage the automoderation system in your server.")]
     [RequireCustomPermission(GuildPermission.ManageGuild)]
     public class AutoModerationModule : TopModule
