@@ -96,8 +96,10 @@ namespace AdvancedBot.Core.Commands.Modules
         [Command("modlogs")]
         [Summary("Shows the modlogs related to the person.")]
         [RequireCustomPermission(GuildPermission.KickMembers)]
-        public async Task GetModLogsForUserAsync(IUser user)
+        public async Task GetModLogsForUserAsync(IUser user = null)
         {
+            user = user ?? Context.User;
+
             var infractions = _moderation.GetAllUserInfractions(Context.Guild.Id, user.Id);
             var fields = new List<EmbedField>();
 
@@ -113,7 +115,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
                 fields.Add(new EmbedFieldBuilder()
                 {
-                    Name = $"Case #{infractions[i].Id} | {infractions[i].Type.Humanize()} by {mod.Username}",
+                    Name = $"Case #{infractions[i].Id} | {infractions[i].Type.Humanize()} by {restMod.Username}",
                     Value = $"{infractions[i].Reason} | {infractions[i].Date.ToShortDateString()}\n\u200b"
                 }
                 .Build());
