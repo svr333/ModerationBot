@@ -87,7 +87,11 @@ namespace AdvancedBot.Core.Commands.Modules
 
             if (infraction.FinishesAt != null)
             {
-                embed.AddField($"Ends At", $"{(infraction.FinishesAt.Value - DateTime.UtcNow).Humanize(3, minUnit: TimeUnit.Second)}", true);
+                if (infraction.FinishesAt > DateTime.UtcNow)
+                {
+                    embed.AddField($"Ends At", $"{(infraction.FinishesAt.Value - DateTime.UtcNow).Humanize(3, minUnit: TimeUnit.Second)}", true);
+                }
+                else embed.AddField($"Ends At", $"Already ended.", true);
             }
 
             await ReplyAsync($"", false, embed.Build());
