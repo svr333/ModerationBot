@@ -109,7 +109,7 @@ namespace AdvancedBot.Core.Commands.Modules
 
             for (int i = 0; i < infractions.Length; i++)
             {
-                var mod = Context.Client.GetUser(infractions[i].ModeratorId);
+                var restMod = await Context.Client.Rest.GetUserAsync(infractions[i].ModeratorId);
 
                 fields.Add(new EmbedFieldBuilder()
                 {
